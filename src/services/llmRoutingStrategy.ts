@@ -52,7 +52,7 @@ export const PROVIDER_COSTS = {
   llm: {
     // Tier 3 - Premium
     'claude-sonnet-4-6': { cost: 15, unit: '1M tokens', tier: 'premium' },
-    'claude-opus-4-6': { cost: 30, unit: '1M tokens', tier: 'premium' },
+    'claude-opus-4-7': { cost: 25, unit: '1M tokens', tier: 'premium' },
     'gpt-4o': { cost: 15, unit: '1M tokens', tier: 'premium' },
     'gpt-5': { cost: 25, unit: '1M tokens', tier: 'premium' },
     

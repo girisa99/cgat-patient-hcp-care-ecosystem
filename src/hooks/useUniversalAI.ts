@@ -37,7 +37,7 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
   const modelCategories = {
     llm: {
       openai: ['gpt-5-2025-08-07', 'gpt-4.1-2025-04-14', 'o3-2025-04-16', 'o4-mini-2025-04-16'],
-      claude: ['claude-opus-4-6', 'claude-sonnet-4-6', 'claude-sonnet-4-6'],
+      claude: ['claude-opus-4-7', 'claude-sonnet-4-6', 'claude-sonnet-4-6'],
       gemini: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.5-pro']
     },
     small: {

@@ -64,8 +64,8 @@ export const TEXT_PROVIDERS: AIProviderOption[] = [
     capabilities: ['fast', 'multimodal'],
   },
   {
-    id: 'claude-opus-4-6',
-    name: 'Anthropic Claude Opus 4.6',
+    id: 'claude-opus-4-7',
+    name: 'Anthropic Claude Opus 4.7',
     shortName: 'Claude Opus',
     icon: '🧠',
     description: 'Deep reasoning & safety',
@@ -373,7 +373,7 @@ export const TRANSLATION_PROVIDERS: AIProviderOption[] = [
 
 // Agent types with their supported providers
 export const AGENT_PROVIDER_MAP: Record<string, AIProviderOption[]> = {
-  coordinator: TEXT_PROVIDERS.filter(p => ['gemini-3-flash', 'gpt-5', 'claude-opus-4-6'].includes(p.id)),
+  coordinator: TEXT_PROVIDERS.filter(p => ['gemini-3-flash', 'gpt-5', 'claude-opus-4-7'].includes(p.id)),
   slide_generator: TEXT_PROVIDERS,
   image_generator: IMAGE_PROVIDERS,
   translator: TRANSLATION_PROVIDERS,

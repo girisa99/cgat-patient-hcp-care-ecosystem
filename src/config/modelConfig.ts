@@ -60,18 +60,18 @@ export const MODEL_REGISTRY: Record<string, ModelInfo> = {
     speed: 'slow',
     context_window: 200000
   },
-  'claude-opus-4-6': {
-    id: 'claude-opus-4-6',
-    name: 'Claude Opus 4.1',
+  'claude-opus-4-7': {
+    id: 'claude-opus-4-7',
+    name: 'Claude Opus 4.7',
     provider: 'claude',
     category: 'llm',
     description: 'Most capable Claude model with exceptional reasoning',
-    capabilities: ['text', 'reasoning', 'analysis', 'writing'],
+    capabilities: ['text', 'reasoning', 'analysis', 'writing', 'coding', 'agentic'],
     available: true,
     fallbackModels: ['claude-sonnet-4-6'],
     pricing: 'high',
     speed: 'medium',
-    context_window: 200000
+    context_window: 1000000
   },
   'claude-sonnet-4-6': {
     id: 'claude-sonnet-4-6',

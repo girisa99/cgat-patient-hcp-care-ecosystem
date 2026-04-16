@@ -142,7 +142,7 @@ interface AIRequest {
 const UNIVERSAL_AI_REGISTRY = {
   llm: {
     openai: ['gpt-5-2025-08-07', 'gpt-4.1-2025-04-14', 'o3-2025-04-16', 'o4-mini-2025-04-16', 'gpt-4o', 'gpt-4o-mini'],
-    claude: ['claude-opus-4-6', 'claude-sonnet-4-6', 'claude-haiku-4-5'],
+    claude: ['claude-opus-4-7', 'claude-sonnet-4-6', 'claude-haiku-4-5'],
     gemini: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3.0-flash-preview'],
     alibaba: ['qwen-turbo', 'qwen-plus', 'qwen-max'],
     deepseek: ['deepseek-chat', 'deepseek-reasoner']

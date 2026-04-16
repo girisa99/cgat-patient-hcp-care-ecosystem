@@ -47,7 +47,7 @@ export const PROVIDER_TIERS: Record<string, GlobalTier> = {
   'gemini-flash': 'standard',
   'gemini-pro': 'advanced',
   'gpt-4o': 'premium',
-  'claude-opus-4-6': 'premium',
+  'claude-opus-4-7': 'premium',
   'deepseek-v3': 'standard',
   
   // Image

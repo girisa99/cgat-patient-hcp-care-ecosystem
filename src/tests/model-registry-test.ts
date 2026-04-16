@@ -55,8 +55,9 @@ const ALIAS_TESTS: Array<{ input: string; expected: string; description: string 
   { input: 'claude-3-5-haiku-20241022', expected: 'claude-haiku-4-5', description: 'Retired Claude 3.5 Haiku → Haiku 4.5' },
   { input: 'claude-3-5-haiku', expected: 'claude-haiku-4-5', description: 'Short alias Claude 3.5 Haiku' },
   { input: 'claude-haiku-latest', expected: 'claude-haiku-4-5', description: 'Latest alias → current Haiku' },
-  { input: 'claude-opus-4-1-20250805', expected: 'claude-opus-4-6', description: 'Previous Opus → current Opus 4.6' },
-  { input: 'claude-opus-latest', expected: 'claude-opus-4-6', description: 'Latest alias → current Opus' },
+  { input: 'claude-opus-4-1-20250805', expected: 'claude-opus-4-7', description: 'Previous Opus 4.1 → current Opus 4.7' },
+  { input: 'claude-opus-4-6', expected: 'claude-opus-4-7', description: 'Deprecated Opus 4.6 → current Opus 4.7' },
+  { input: 'claude-opus-latest', expected: 'claude-opus-4-7', description: 'Latest alias → current Opus' },
 
   // OPENAI — DALL-E retirement (May 12, 2025)
   { input: 'dall-e-3', expected: 'gpt-image-1', description: 'DALL-E 3 (sunsetting) → GPT Image 1' },
@@ -86,7 +87,7 @@ const ALIAS_TESTS: Array<{ input: string; expected: string; description: string 
 const ACTIVE_MODEL_TESTS: Array<{ input: string; description: string }> = [
   { input: 'claude-sonnet-4-6', description: 'Current Claude Sonnet 4.6' },
   { input: 'claude-haiku-4-5', description: 'Current Claude Haiku 4.5' },
-  { input: 'claude-opus-4-6', description: 'Current Claude Opus 4.6' },
+  { input: 'claude-opus-4-7', description: 'Current Claude Opus 4.7' },
   { input: 'gpt-4o', description: 'Current GPT-4o' },
   { input: 'gpt-4o-mini', description: 'Current GPT-4o Mini' },
   { input: 'gpt-image-1', description: 'Current GPT Image 1' },

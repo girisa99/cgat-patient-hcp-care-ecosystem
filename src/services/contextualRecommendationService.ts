@@ -154,7 +154,7 @@ const PROVIDER_CAPABILITY_SCORES: Record<string, { quality: number; speed: numbe
   // LLMs - Tier 3 (Premium)
   // ═══════════════════════════════════════════════════════════════════════════
   'claude-sonnet-4-6': { quality: 98, speed: 85, cost: 60, tier: 'premium' },
-  'claude-opus-4-6': { quality: 99, speed: 70, cost: 40, tier: 'premium' },
+  'claude-opus-4-7': { quality: 99, speed: 70, cost: 40, tier: 'premium' },
   'gpt-4o': { quality: 96, speed: 88, cost: 55, tier: 'premium' },
   'gpt-5': { quality: 99, speed: 80, cost: 45, tier: 'premium' },
   

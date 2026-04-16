@@ -50,7 +50,7 @@ export const UniversalModelSelector: React.FC<UniversalModelSelectorProps> = ({
           suggestedModels.push(
             {
               provider: 'claude',
-              model: 'claude-opus-4-6',
+              model: 'claude-opus-4-7',
               category: 'llm',
               name: 'Claude Opus (Medical)',
               role: 'primary',

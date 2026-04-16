@@ -68,7 +68,7 @@ const llmProviders: LLMProvider[] = [
   {
     id: 'claude-opus-4',
     name: 'Claude Opus 4',
-    model: 'claude-opus-4-6',
+    model: 'claude-opus-4-7',
     capabilities: ['Text', 'Vision', 'Superior Reasoning'],
     cost: 'Premium'
   },

@@ -207,7 +207,7 @@ export const AgentCanvas = () => {
 
     // AI Model suggestions
     if (useCase.includes('advanced') || useCase.includes('complex')) {
-      suggestedModels.push('gpt-4o', 'claude-opus-4-6');
+      suggestedModels.push('gpt-4o', 'claude-opus-4-7');
     } else if (useCase.includes('chat') || useCase.includes('conversation')) {
       suggestedModels.push('gpt-4o', 'claude-sonnet-4-6');
     } else if (useCase.includes('search') || useCase.includes('research')) {

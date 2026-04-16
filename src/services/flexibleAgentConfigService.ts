@@ -261,20 +261,20 @@ const INDUSTRY_PROVIDER_ROUTING: Record<string, {
   reason: string;
 }> = {
   // Healthcare
-  'healthcare': { textProvider: 'claude-opus-4-6', imageProvider: 'gpt-image-1', reason: 'Medical accuracy & compliance' },
-  'pharma': { textProvider: 'claude-opus-4-6', imageProvider: 'gpt-image-1', reason: 'Regulatory precision' },
+  'healthcare': { textProvider: 'claude-opus-4-7', imageProvider: 'gpt-image-1', reason: 'Medical accuracy & compliance' },
+  'pharma': { textProvider: 'claude-opus-4-7', imageProvider: 'gpt-image-1', reason: 'Regulatory precision' },
   'biotech': { textProvider: 'gemini-2.5-pro', imageProvider: 'stability-sdxl', reason: 'Scientific visualization' },
   
   // Finance & Legal
-  'finance': { textProvider: 'claude-opus-4-6', imageProvider: 'gpt-image-1', reason: 'Compliance & accuracy' },
+  'finance': { textProvider: 'claude-opus-4-7', imageProvider: 'gpt-image-1', reason: 'Compliance & accuracy' },
   'banking': { textProvider: 'azure-gpt-4o', imageProvider: 'gpt-image-1', reason: 'Enterprise security' },
-  'legal': { textProvider: 'claude-opus-4-6', imageProvider: 'gpt-image-1', reason: 'Legal precision' },
+  'legal': { textProvider: 'claude-opus-4-7', imageProvider: 'gpt-image-1', reason: 'Legal precision' },
   'insurance': { textProvider: 'claude-sonnet-4-6', imageProvider: 'modelslab-flux', reason: 'Policy accuracy' },
   
   // Technology
   'technology': { textProvider: 'gemini-3-flash', imageProvider: 'modelslab-flux', reason: 'Fast & innovative' },
   'saas': { textProvider: 'deepseek-v3', imageProvider: 'modelslab-flux', reason: 'Technical depth' },
-  'cybersecurity': { textProvider: 'claude-opus-4-6', imageProvider: 'stability-sdxl', reason: 'Security focus' },
+  'cybersecurity': { textProvider: 'claude-opus-4-7', imageProvider: 'stability-sdxl', reason: 'Security focus' },
   'ai-ml': { textProvider: 'gemini-2.5-pro', imageProvider: 'modelslab-flux', reason: 'AI expertise' },
   
   // Creative & Marketing
@@ -283,8 +283,8 @@ const INDUSTRY_PROVIDER_ROUTING: Record<string, {
   'media': { textProvider: 'gemini-3-flash', imageProvider: 'modelslab-flux', reason: 'Visual storytelling' },
   
   // Consulting
-  'consulting': { textProvider: 'claude-opus-4-6', imageProvider: 'gpt-image-1', reason: 'Strategic depth' },
-  'strategy': { textProvider: 'claude-opus-4-6', imageProvider: 'stability-sdxl', reason: 'Analytical precision' },
+  'consulting': { textProvider: 'claude-opus-4-7', imageProvider: 'gpt-image-1', reason: 'Strategic depth' },
+  'strategy': { textProvider: 'claude-opus-4-7', imageProvider: 'stability-sdxl', reason: 'Analytical precision' },
   
   // Education & Non-Profit
   'education': { textProvider: 'gemini-2.5-pro', imageProvider: 'modelslab-realvis', reason: 'Educational clarity' },
@@ -524,15 +524,15 @@ const CONTENT_TYPE_A2A_ROUTING: Record<string, {
   reason: string;
 }> = {
   // Narrative
-  'storytelling': { primaryProvider: 'claude-opus-4-6', a2aRequired: true, tier: 2, agents: ['content_generator', 'enhancer', 'image_generator'], suggestedFrameworks: ['customer-journey'], reason: 'Narrative arc' },
-  'case-study': { primaryProvider: 'claude-opus-4-6', a2aRequired: true, tier: 2, agents: ['content_generator', 'content_analyzer', 'image_generator'], suggestedFrameworks: ['value-chain'], reason: 'Case analysis' },
+  'storytelling': { primaryProvider: 'claude-opus-4-7', a2aRequired: true, tier: 2, agents: ['content_generator', 'enhancer', 'image_generator'], suggestedFrameworks: ['customer-journey'], reason: 'Narrative arc' },
+  'case-study': { primaryProvider: 'claude-opus-4-7', a2aRequired: true, tier: 2, agents: ['content_generator', 'content_analyzer', 'image_generator'], suggestedFrameworks: ['value-chain'], reason: 'Case analysis' },
   'customer-journey': { primaryProvider: 'claude-sonnet-4-6', a2aRequired: true, tier: 2, agents: ['content_generator', 'image_generator', 'content_analyzer'], suggestedFrameworks: ['patient-journey', 'customer-lifecycle'], reason: 'Journey mapping' },
   
   // Business
-  'investor-pitch': { primaryProvider: 'claude-opus-4-6', a2aRequired: true, tier: 3, agents: ['coordinator', 'content_generator', 'enhancer', 'image_generator'], suggestedFrameworks: ['growth-share-matrix', 'saas-metrics'], reason: 'Investment narrative' },
+  'investor-pitch': { primaryProvider: 'claude-opus-4-7', a2aRequired: true, tier: 3, agents: ['coordinator', 'content_generator', 'enhancer', 'image_generator'], suggestedFrameworks: ['growth-share-matrix', 'saas-metrics'], reason: 'Investment narrative' },
   'sales-deck': { primaryProvider: 'gemini-3-flash', a2aRequired: true, tier: 2, agents: ['content_generator', 'enhancer', 'image_generator'], suggestedFrameworks: ['swot', 'competitive-analysis'], reason: 'Sales persuasion' },
   'quarterly-review': { primaryProvider: 'gemini-3-flash', a2aRequired: true, tier: 2, agents: ['content_generator', 'content_analyzer', 'image_generator'], suggestedFrameworks: ['balanced-scorecard', 'okr'], reason: 'Performance review' },
-  'board-presentation': { primaryProvider: 'claude-opus-4-6', a2aRequired: true, tier: 3, agents: ['coordinator', 'content_generator', 'enhancer'], suggestedFrameworks: ['tier1-strategy', 'three-horizons'], reason: 'Executive summary' },
+  'board-presentation': { primaryProvider: 'claude-opus-4-7', a2aRequired: true, tier: 3, agents: ['coordinator', 'content_generator', 'enhancer'], suggestedFrameworks: ['tier1-strategy', 'three-horizons'], reason: 'Executive summary' },
   
   // Training
   'training-module': { primaryProvider: 'gemini-2.5-pro', a2aRequired: true, tier: 2, agents: ['content_generator', 'enhancer', 'image_generator', 'interactive_generator'], suggestedFrameworks: ['design-thinking'], reason: 'Educational content' },
@@ -540,9 +540,9 @@ const CONTENT_TYPE_A2A_ROUTING: Record<string, {
   'workshop': { primaryProvider: 'gemini-2.5-pro', a2aRequired: true, tier: 2, agents: ['content_generator', 'interactive_generator', 'content_analyzer'], suggestedFrameworks: ['design-thinking', 'scrum'], reason: 'Workshop materials' },
   
   // Research
-  'research-report': { primaryProvider: 'claude-opus-4-6', a2aRequired: true, tier: 3, agents: ['coordinator', 'content_generator', 'content_analyzer', 'enhancer'], suggestedFrameworks: ['pestle', 'porter-five'], reason: 'Research depth' },
+  'research-report': { primaryProvider: 'claude-opus-4-7', a2aRequired: true, tier: 3, agents: ['coordinator', 'content_generator', 'content_analyzer', 'enhancer'], suggestedFrameworks: ['pestle', 'porter-five'], reason: 'Research depth' },
   'market-analysis': { primaryProvider: 'gemini-2.5-pro', a2aRequired: true, tier: 2, agents: ['content_generator', 'content_analyzer', 'image_generator'], suggestedFrameworks: ['porter-five', 'competitive-analysis'], reason: 'Market insights' },
-  'whitepaper': { primaryProvider: 'claude-opus-4-6', a2aRequired: true, tier: 3, agents: ['coordinator', 'content_generator', 'enhancer', 'content_analyzer'], suggestedFrameworks: ['value-chain', 'pestle'], reason: 'Technical depth' },
+  'whitepaper': { primaryProvider: 'claude-opus-4-7', a2aRequired: true, tier: 3, agents: ['coordinator', 'content_generator', 'enhancer', 'content_analyzer'], suggestedFrameworks: ['value-chain', 'pestle'], reason: 'Technical depth' },
   
   // Visual
   'infographic-deck': { primaryProvider: 'modelslab-flux', a2aRequired: true, tier: 2, agents: ['image_generator', 'enhancer', 'content_analyzer'], suggestedFrameworks: ['swot'], reason: 'Visual focus' },
@@ -1009,8 +1009,8 @@ class FlexibleAgentConfigService {
         
       case AGENT_TYPES.ENHANCER:
         // Enhancement - prefer Claude for nuanced rewriting
-        provider = 'claude-opus-4-6';
-        model = 'claude-opus-4-6';
+        provider = 'claude-opus-4-7';
+        model = 'claude-opus-4-7';
         reason = 'Superior rewriting & enhancement';
         fallbacks = ['gemini-2.5-pro', 'gpt-5'];
         break;
@@ -1133,7 +1133,7 @@ class FlexibleAgentConfigService {
       'gemini-2.5-pro': 'gemini-2.5-pro-preview',
       'gpt-5': 'gpt-5',
       'gpt-5-mini': 'gpt-5-mini',
-      'claude-opus-4-6': 'claude-opus-4-6',
+      'claude-opus-4-7': 'claude-opus-4-7',
       'claude-sonnet-4-6': 'claude-sonnet-4-6',
       'deepseek-v3': 'deepseek-chat',
       'qwen-max': 'qwen-max',

@@ -190,7 +190,7 @@ Provide a brief, readable summary in 2-3 sentences.`,
   const modelCategories = useMemo(() => ({
     fast: ['gemini-2.5-flash', 'gpt-4o-mini', 'claude-haiku-4-5'],
     balanced: ['gemini-2.5-flash', 'gpt-5-mini-2025-08-07', 'claude-sonnet-4-6'],
-    powerful: ['gemini-2.5-pro', 'gpt-5-2025-08-07', 'claude-opus-4-6']
+    powerful: ['gemini-2.5-pro', 'gpt-5-2025-08-07', 'claude-opus-4-7']
   }), []);
 
   return {

@@ -105,7 +105,9 @@ INSERT INTO ai_model_registry (model_id, model_alias, display_name, provider, ca
 -- ═══════════════════════════════════════════════════════════════════════════
 ('claude-sonnet-4-6', ARRAY['claude-sonnet-4-20250514','claude-sonnet-4','claude-3-5-sonnet-20241022','claude-3-5-sonnet','claude-sonnet-latest'], 'Claude Sonnet 4.6', 'anthropic', ARRAY['llm','vision','code-gen','function-calling'], 'active', NULL, NULL, 'advanced', 'medium', NULL, 3.0000, 15.0000, 200000, 8192, true, true, true, '{"family":"claude-4"}'),
 
-('claude-opus-4-6', ARRAY['claude-opus-4-1-20250805','claude-opus-4','claude-opus-latest'], 'Claude Opus 4.6', 'anthropic', ARRAY['llm','vision','code-gen','function-calling','reasoning'], 'active', NULL, NULL, 'premium', 'slow', NULL, 15.0000, 75.0000, 200000, 8192, true, true, true, '{"family":"claude-4"}'),
+('claude-opus-4-7', ARRAY['claude-opus-4-6','claude-opus-4-5','claude-opus-4','claude-opus-4-1-20250805','claude-opus-latest'], 'Claude Opus 4.7', 'anthropic', ARRAY['llm','vision','code-gen','function-calling','streaming','coding','agentic'], 'active', NULL, NULL, 'premium', 'medium', NULL, 5.0000, 25.0000, 1000000, 8192, true, true, true, '{"family":"claude-4"}'),
+
+('claude-opus-4-6', ARRAY[]::TEXT[], 'Claude Opus 4.6 (Deprecated)', 'anthropic', ARRAY['llm','vision','code-gen','function-calling','reasoning'], 'deprecated', 'claude-opus-4-7', NULL, 'premium', 'slow', NULL, 15.0000, 75.0000, 200000, 8192, true, true, true, '{"family":"claude-4"}'),
 
 ('claude-haiku-4-5', ARRAY['claude-3-5-haiku-20241022','claude-3-5-haiku','claude-haiku-latest','claude-haiku-4-5'], 'Claude Haiku 4.5', 'anthropic', ARRAY['llm','vision','code-gen','function-calling'], 'active', NULL, NULL, 'standard', 'fast', NULL, 0.8000, 4.0000, 200000, 8192, true, true, true, '{"family":"claude-4"}'),
 

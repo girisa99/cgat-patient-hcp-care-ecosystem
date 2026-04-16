@@ -37,7 +37,7 @@ export const AI_MODELS = {
   GEMINI_1_5_PRO: 'gemini-2.5-pro',
   GPT_4O_VISION: 'gpt-4o',
   GPT_4O: 'gpt-4o',
-  CLAUDE_OPUS_4_5: 'claude-opus-4-6',
+  CLAUDE_OPUS_4_5: 'claude-opus-4-7',
   CLAUDE_SONNET_4_5: 'claude-sonnet-4-6',
 } as const;
 
