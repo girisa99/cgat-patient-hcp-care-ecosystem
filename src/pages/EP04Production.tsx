@@ -2111,7 +2111,7 @@ function EP04ProductionInner() {
               await new Promise(r => setTimeout(r, backoffMs));
             }
             const result = await supabase.functions.invoke('ai-universal-processor', { body: avatarBody });
-            data = result.data;
+            data = result.data as any;
             error = result.error;
             if (!error) break;
             console.warn(`[EP04 Visual] ${stepLabel}: avatar attempt ${attempt + 1} failed: ${error.message}`);
@@ -2484,7 +2484,7 @@ function EP04ProductionInner() {
       if (!error && data && data.success === false && !data.asyncGeneration) {
         const bodyError = data.error || data.message || 'Edge function returned success:false';
         console.warn(`[EP04 Visual] ${stepLabel}: edge fn returned 200 but success=false: ${bodyError}`);
-        error = { message: bodyError };
+        error = { message: bodyError as string };
       }
       if (!error) break; // Success — stop retrying
       console.warn(`[EP04 Visual] ${stepLabel}: attempt ${attempt + 1} failed: ${error.message}`);
@@ -6691,7 +6691,7 @@ function EP04ProductionInner() {
                             </Button>
                           )}
                           {/* Regenerate buttons for completed/errored scenes */}
-                          {(status?.visual === 'done' || status?.visual === 'error') && (
+                          {(status?.visual === 'done' || status?.visual === 'error') && (() => {const sv = status?.visual as string; return (
                             <div className="flex flex-col gap-1 mt-1">
                               {/* Row 1: Regen All + Lipsync + Images */}
                               <div className="flex gap-1">
