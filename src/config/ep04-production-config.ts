@@ -347,7 +347,7 @@ export type ScenePipelineStep =
   | { type: 'avatar-3d'; character: keyof typeof EP04_AVATAR_CONFIG['characters']; style?: 'pixar-3d' | 'disney-2d' | 'hybrid-2.5d' }
   | { type: 'avatar-lipsync'; character: keyof typeof EP04_AVATAR_CONFIG['characters']; provider: 'alibaba-wan2.2' | 'alibaba-omniavatar' | 'modelslab'; scriptKey?: string }
   | { type: 'alibaba-video'; model: 'wan2.1-t2v' | 'wan2.6-t2v' | 'wan2.6-i2v' | 'wan2.1-i2v' | 'sora-2'; prompt: string; referenceImage?: string; provider?: string }
-  | { type: 'alibaba-image'; model: 'wan2.6-t2i' | 'wanx-v2.1' | 'qwen-image-max'; prompt: string }
+  | { type: 'alibaba-image'; model: string; prompt: string }
   | { type: 'music'; prompt: string; duration: number; style?: string }
   | { type: 'sfx'; prompt: string; duration?: number }
   | { type: 'motion-graphics'; content: string }

@@ -193,7 +193,7 @@ export function useAssemblyPipeline(projectId: string | null): AssemblyPipelineR
           if (projectId && permanentUrl) {
             await updateFinalAssembly(projectId, permanentUrl, {
               totalDuration: data.job.duration || 0,
-              resolution: resolution || '1080p',
+              resolution: '1080p',
             });
           }
           toast.success('Video assembled successfully!');
