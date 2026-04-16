@@ -110,7 +110,7 @@ export function CelebrationCreator({ projectId, onGenerate }: CelebrationCreator
     // Base partition against 'celebrations' + selected format
     const formatName = selection.format ?? null;
     const { recommended, compatible, other } = partitionStylesByMatch(
-      parentStyles, 'celebrations', formatName
+      parentStyles as any[], 'celebrations', formatName
     );
 
     // Ceremony-specific boost: styles whose category matches the ceremony's preferred categories
@@ -122,11 +122,11 @@ export function CelebrationCreator({ projectId, onGenerate }: CelebrationCreator
     const remainingCompatible: typeof parentStyles = [];
     const remainingOther: typeof parentStyles = [];
 
-    for (const s of compatible) {
+    for (const s of compatible as any[]) {
       if (ceremonyStyleCats.includes(s.category)) boosted.push(s);
       else remainingCompatible.push(s);
     }
-    for (const s of other) {
+    for (const s of other as any[]) {
       if (ceremonyStyleCats.includes(s.category)) boosted.push(s);
       else remainingOther.push(s);
     }

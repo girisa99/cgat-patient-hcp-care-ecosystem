@@ -23,7 +23,8 @@ export type GenieProduct = 'spark' | 'mind' | 'deck' | 'vibe' | 'arc' | 'hub' | 
 export type EmotionalTone =
   | 'inspiring' | 'educational' | 'dramatic' | 'playful'
   | 'urgent' | 'conversational' | 'authoritative' | 'empathetic'
-  | 'celebratory' | 'mysterious' | 'nostalgic' | 'provocative';
+  | 'celebratory' | 'mysterious' | 'nostalgic' | 'provocative'
+  | 'sacred' | 'elegant';
 
 /** Script purpose — determines pacing and structure constraints */
 export type ScriptPurpose =

@@ -745,7 +745,7 @@ export function CreateConfigureStep({
                 const contentFmtName = contentRegistry.formats.find(f => f.id === selectedFormatId)?.name || null;
                 const dbParentStyles = contentRegistry.visualStyles.filter(s => !s.parent_style_id);
                 const parentStyles = dbParentStyles.length > 0 ? dbParentStyles : FALLBACK_VISUAL_STYLES;
-                const { recommended, compatible, other } = partitionStylesByMatch(parentStyles, contentCatName, contentFmtName);
+                const { recommended, compatible, other } = partitionStylesByMatch(parentStyles as any[], contentCatName, contentFmtName);
 
                 const iconMap = (icon: string | undefined) =>
                   icon === 'Film' ? '\uD83C\uDFAC' : icon === 'Palette' ? '\uD83C\uDFA8' : icon === 'Camera' ? '\uD83D\uDCF7' : icon === 'Star' ? '\u2B50' : icon === 'Box' ? '\uD83D\uDCE6' : '\uD83C\uDFAD';
@@ -1037,7 +1037,7 @@ export function CreateConfigureStep({
 
           {/* 5a-ii-b: Style Preview -- show AI-generated preview for selected styles */}
           {selectedVisualStyleIds.length > 0 && (() => {
-            const allStyles = contentRegistry.visualStyles.length > 0
+            const allStyles: any[] = contentRegistry.visualStyles.length > 0
               ? contentRegistry.visualStyles
               : FALLBACK_VISUAL_STYLES;
             const selectedStyles = selectedVisualStyleIds
@@ -1073,13 +1073,13 @@ export function CreateConfigureStep({
           {/* 5a-iii: Style Customization -- B-007: Always visible (no pre-select gate) */}
           <StyleCustomizationPanel
             selectedStyles={selectedVisualStyleIds
-              .map(id => (contentRegistry.visualStyles.length > 0
+              .map(id => ((contentRegistry.visualStyles.length > 0
                 ? contentRegistry.visualStyles
-                : FALLBACK_VISUAL_STYLES).find(s => s.id === id))
+                : FALLBACK_VISUAL_STYLES) as any[]).find(s => s.id === id))
               .filter((s): s is NonNullable<typeof s> => !!s)}
-            allStyles={contentRegistry.visualStyles.length > 0
+            allStyles={(contentRegistry.visualStyles.length > 0
               ? contentRegistry.visualStyles
-              : FALLBACK_VISUAL_STYLES}
+              : FALLBACK_VISUAL_STYLES) as any[]}
             characterFramePercent={characterFramePercent}
             onCharacterFrameChange={setCharacterFramePercent}
             onStyleCreated={contentRegistry.refresh}

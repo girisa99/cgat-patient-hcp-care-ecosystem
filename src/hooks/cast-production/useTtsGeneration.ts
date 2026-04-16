@@ -246,19 +246,19 @@ export function useTtsGeneration(
       const resolvedVoice = data.voice || voiceConfig.voiceId;
       const actualTokens = data.tokensUsed || Math.ceil(line.text.length / 4);
 
-      setAudioMap(prev => ({ ...prev, [key]: { audioUrl: audioUrl!, provider: resolvedProvider, voice: resolvedVoice } }));
+      setAudioMap(prev => ({ ...prev, [key]: { audioUrl: audioUrl!, provider: resolvedProvider as string, voice: resolvedVoice as string } }));
       setStatusMap(prev => ({ ...prev, [key]: 'done' }));
 
       // Persist to DB
       if (projectId) {
         updateLineTTS(projectId, key, {
           tts_audio_url: audioUrl!,
-          tts_provider: resolvedProvider,
-          tts_voice_id: resolvedVoice,
+          tts_provider: resolvedProvider as string,
+          tts_voice_id: resolvedVoice as string,
           tts_status: 'generated',
         });
         if (jobId) {
-          completeGenerationJob(jobId, actualTokens, audioUrl);
+          completeGenerationJob(jobId, actualTokens as number, audioUrl);
         }
       }
       return true;

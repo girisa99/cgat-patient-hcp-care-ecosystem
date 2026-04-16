@@ -1014,7 +1014,7 @@ function getTransitionSfxDescriptor(style: StorybookTransitionStyle): string {
 function deriveSceneMusicMood(sceneType: SceneType, act: NarrativeAct): string {
   // Map scene types to emotional descriptors — these are universal modifiers
   // that get combined with regional genre/instruments from the registry
-  const emotionMap: Record<SceneType, string> = {
+  const emotionMap: Partial<Record<SceneType, string>> = {
     title_hook:          'grand opening, epic reveal, attention-grabbing',
     problem_statement:   'tense, building urgency, minor key undertone',
     character_intro:     'playful, character-establishing, whimsical woodwinds',
@@ -1031,7 +1031,7 @@ function deriveSceneMusicMood(sceneType: SceneType, act: NarrativeAct): string {
     testimonial:         'sincere, simple accompaniment, warm piano',
   };
 
-  return `${emotionMap[sceneType]}, ${ACT_MOOD_MAP[act].mood}`;
+  return `${emotionMap[sceneType] || 'neutral'}, ${ACT_MOOD_MAP[act].mood}`;
 }
 
 /**
@@ -1129,7 +1129,7 @@ function selectLeitmotifInstrument(char: EnrichmentCharacter, instruments: strin
 
 /** Generate SFX cues based on scene type — context-aware, not hardcoded per scene */
 function generateSceneSfx(sceneType: SceneType, title: string, presetSfxStyle?: string): (ScenePipelineStep & { type: 'sfx' })[] {
-  const sfxByType: Record<SceneType, Array<{ prompt: string; duration?: number }>> = {
+  const sfxByType: Partial<Record<SceneType, Array<{ prompt: string; duration?: number }>>> = {
     title_hook:          [{ prompt: 'Grand opening reveal with magical shimmer', duration: 3 }, { prompt: 'Title card whoosh impact', duration: 1 }],
     problem_statement:   [{ prompt: 'Tension building bass rumble', duration: 4 }, { prompt: 'Frustrated sigh with ambient noise' }],
     character_intro:     [{ prompt: 'Character appearance sparkle chime', duration: 2 }, { prompt: 'Personality-establishing sound motif', duration: 1 }],

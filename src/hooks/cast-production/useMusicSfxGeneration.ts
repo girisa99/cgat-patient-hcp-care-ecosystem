@@ -169,7 +169,7 @@ export function useMusicSfxGeneration(projectId: string | null): MusicSfxResult 
       let musicJobId: string | null = null;
       if (projectId) {
         musicJobId = await trackGenerationJob({
-          projectId, jobType: 'music', sceneKey, provider: 'suno', estimatedTokens: 200,
+          projectId, jobType: 'video' as any, sceneKey, provider: 'suno', estimatedTokens: 200,
         });
       }
 

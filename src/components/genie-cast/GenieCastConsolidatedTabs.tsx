@@ -866,9 +866,10 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
               toast.info('Loading EP04 project...');
               let projectId: string | null = null;
               try {
-                const { data: { user } } = await supabase.auth.getUser();
+                const { supabase: sb } = await import('@/integrations/supabase/client');
+                const { data: { user } } = await sb.auth.getUser();
                 if (user) {
-                  const db = supabase as any;
+                   const db = sb as any;
                   const { data: existing } = await db
                     .from('cast_projects')
                     .select('id')
@@ -1921,20 +1922,20 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   sourceProduct="cast"
                   content={packCastContent(
                     {
-                      videoUrl: castSession.session.productionArtifacts?.finalVideoUrl,
+                      videoUrl: castSession.session.productionArtifacts?.assembledVideoUrl,
                       audioUrl: castSession.session.productionArtifacts?.audioUrl,
-                      thumbnailUrl: castSession.session.productionArtifacts?.thumbnailUrl,
+                      thumbnailUrl: castSession.session.productionArtifacts?.thumbnailUrls?.[0],
                       title: castSession.session.approvedMessaging?.hook || castSession.session.enrichmentPrompt || 'Untitled',
                       description: castSession.session.approvedMessaging?.valueProposition,
                     },
                     {
-                      id: castSession.session.id || `cast_${Date.now()}`,
+                      id: castSession.session.sessionId || `cast_${Date.now()}`,
                       selectedRegion: castSession.session.selectedRegion,
-                      language: castSession.session.selectedLanguage,
+                      language: castSession.session.outputLanguages?.[0] || 'en',
                     },
                   )}
                   region={castSession.session.selectedRegion}
-                  language={castSession.session.selectedLanguage}
+                  language={castSession.session.outputLanguages?.[0] || 'en'}
                 />
 
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">

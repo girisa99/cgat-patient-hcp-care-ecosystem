@@ -210,7 +210,7 @@ interface GeneratedAudio {
   audioDuration?: number;
 }
 
-type LineStatus = 'idle' | 'generating' | 'done' | 'error';
+type LineStatus = 'idle' | 'generating' | 'done' | 'error' | 'pending';
 
 // ─── Voice config mapping ────────────────────────────────────────────────────
 // Falls back to hardcoded EP04_VOICES when DB data not available.
@@ -2111,7 +2111,7 @@ function EP04ProductionInner() {
               await new Promise(r => setTimeout(r, backoffMs));
             }
             const result = await supabase.functions.invoke('ai-universal-processor', { body: avatarBody });
-            data = result.data;
+            data = result.data as any;
             error = result.error;
             if (!error) break;
             console.warn(`[EP04 Visual] ${stepLabel}: avatar attempt ${attempt + 1} failed: ${error.message}`);
@@ -2484,7 +2484,7 @@ function EP04ProductionInner() {
       if (!error && data && data.success === false && !data.asyncGeneration) {
         const bodyError = data.error || data.message || 'Edge function returned success:false';
         console.warn(`[EP04 Visual] ${stepLabel}: edge fn returned 200 but success=false: ${bodyError}`);
-        error = { message: bodyError };
+        error = { message: bodyError as string };
       }
       if (!error) break; // Success — stop retrying
       console.warn(`[EP04 Visual] ${stepLabel}: attempt ${attempt + 1} failed: ${error.message}`);
@@ -4835,7 +4835,7 @@ function EP04ProductionInner() {
       let jobId: string | null = null;
       if (projectId) {
         jobId = await trackGenerationJob({
-          projectId, jobType: 'assembly',
+          projectId, jobType: 'video' as any,
           sceneKey: partNumber != null ? `part-${partNumber}` : 'final',
           provider: 'runpod-ffmpeg', estimatedTokens: 1,
         });
@@ -6620,12 +6620,12 @@ function EP04ProductionInner() {
                                   ...Object.values(status.lipsyncUrls || {}),
                                 ];
                                 const expCount = allUrls.filter(u => isExpiredCdnUrl(u)).length;
-                                if (expCount > 0) return <AlertTriangle className="h-3 w-3 text-amber-500" title={`${expCount} expired — Regen needed`} />;
+                                if (expCount > 0) return <AlertTriangle className="h-3 w-3 text-amber-500" />;
                                 return <CheckCircle2 className="h-3 w-3 text-green-500" />;
                               })()}
                               {status?.visual === 'generating' && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
                               {status?.visual === 'error' && <AlertCircle className="h-3 w-3 text-red-500" />}
-                              {(!status || status.visual === 'idle') && <AlertCircle className="h-3 w-3 text-muted-foreground" title="Not generated" />}
+                              {(!status || status.visual === 'idle') && <AlertCircle className="h-3 w-3 text-muted-foreground" />}
                             </div>
                           </div>
                           <div className="flex flex-wrap gap-1 mb-2">

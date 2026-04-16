@@ -59,6 +59,7 @@ const MODE_LABELS: Record<EnhancementMode, { label: string; icon: React.ElementT
   character_roleplay: { label: 'Character', icon: Globe },
   avatar_presenter: { label: 'Avatar', icon: Globe },
   combination: { label: 'Multi-Modal', icon: Sparkles },
+  ceremonial: { label: 'Ceremonial', icon: Globe },
   auto: { label: 'Auto', icon: Wand2 },
 };
 

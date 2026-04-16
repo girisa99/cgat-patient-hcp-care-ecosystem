@@ -270,7 +270,7 @@ export function buildProductionScriptFromAgenticContext(
     lipSyncEnabled: true,
     humorLevel: ctx.creative.tone === 'humorous' ? 4 : 1,
     humorStyle: 'auto',
-    mode: 'standard',
+    mode: 'standard' as any,
     quality: 'production',
     targetDuration,
     sceneCount: 5,

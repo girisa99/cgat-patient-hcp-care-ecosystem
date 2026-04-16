@@ -114,11 +114,11 @@ export function buildEP04Template(): ProjectTemplate {
   // Bookends
   const bookends: ProjectTemplate['bookends'] = EP04_STORYBOOK_BOOKENDS ? {
     opening: {
-      duration: EP04_STORYBOOK_BOOKENDS.opening?.duration || 21,
+      duration: (EP04_STORYBOOK_BOOKENDS.opening as any)?.duration || 21,
       title: 'Beyond AI Hype — Episode 2',
     },
     closing: {
-      duration: EP04_STORYBOOK_BOOKENDS.closing?.duration || 16,
+      duration: (EP04_STORYBOOK_BOOKENDS.closing as any)?.duration || 16,
       title: 'The End... For Now',
     },
   } : undefined;
