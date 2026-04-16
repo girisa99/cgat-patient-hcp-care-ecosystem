@@ -2043,7 +2043,7 @@ function EP04ProductionInner() {
           if (jobId && projectId) await completeGenerationJob(jobId, 0);
           return;
         }
-        let url = data?.url || data?.imageUrl;
+        let url: string | null = (data?.url || data?.imageUrl) as string | null;
         console.log(`[EP04 Visual] ${stepLabel}: storybook-frame response — url=${url ? 'YES' : 'NONE'}`);
         // Ensure URL is on Supabase Storage (handles base64, CDN URLs, etc.)
         if (url && projectId && !isSupabaseStorageUrl(url)) {
@@ -2052,7 +2052,7 @@ function EP04ProductionInner() {
           } catch { console.warn(`[EP04 Visual] ${stepLabel}: storybook-frame mirror failed`); }
         }
         if (url) results[`storybook-frame-${sceneKey}-${String(Object.keys(results).filter(k => k.startsWith(`storybook-frame-${sceneKey}`)).length).padStart(3, '0')}`] = url;
-        if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 1, url, data?.provider || 'alibaba-image');
+        if (jobId && projectId) await completeGenerationJob(jobId, (data?.tokensUsed as number) || 1, url, (data?.provider as string) || 'alibaba-image');
       } catch (err: any) {
         console.error(`[EP04 Visual] ${stepLabel}: storybook-frame threw:`, err?.message || err);
         toast.error(`${stepLabel} storybook-frame error: ${err?.message || 'unknown'}`);
@@ -2134,7 +2134,7 @@ function EP04ProductionInner() {
             throw new Error(String(detail));
           }
           // Ensure URL is on Supabase Storage (handles base64, CDN, or relative paths)
-          let url = data?.url || data?.imageUrl || data?.result?.url;
+          let url: string | null = (data?.url || data?.imageUrl || (data?.result as any)?.url) as string | null;
           if (!url) throw new Error('No image URL in response');
 
           if (projectId && !isSupabaseStorageUrl(url)) {
@@ -2147,8 +2147,8 @@ function EP04ProductionInner() {
           }
 
           results[`avatar-3d-${character}-${sceneKey}`] = url;
-          console.log(`[EP04 Visual] ${stepLabel}: Alibaba avatar for "${character}": ${url.substring(0, 80)}...`);
-          if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 1, url, data?.provider || 'alibaba-image');
+          console.log(`[EP04 Visual] ${stepLabel}: Alibaba avatar for "${character}": ${(url as string).substring(0, 80)}...`);
+          if (jobId && projectId) await completeGenerationJob(jobId, (data?.tokensUsed as number) || 1, url, (data?.provider as string) || 'alibaba-image');
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
           console.warn(`[EP04 Visual] ${stepLabel}: avatar generation failed for "${character}": ${msg}`);
@@ -2515,18 +2515,18 @@ function EP04ProductionInner() {
       return;
     }
 
-    let url = data?.url || data?.videoUrl || data?.imageUrl || null;
+    let url: string | null = (data?.url || data?.videoUrl || data?.imageUrl || null) as string | null;
     // Skip placeholder URLs (placehold.co) — these mean the real generation failed
-    const isPlaceholder = url && (url.includes('placehold.co') || url.includes('placeholder'));
+    const isPlaceholder = url && ((url as string).includes('placehold.co') || (url as string).includes('placeholder'));
     const isAsync = data?.asyncGeneration === true;
-    const taskId2 = data?.taskId;
+    const taskId2 = data?.taskId as string | undefined;
 
     // If video is still generating async, poll for completion (WAN models take 1-5 min)
     if (isAsync && taskId2 && !url) {
       toast.info(`${stepLabel} "${stepType}": video generating... polling for result`);
-      url = await pollVideoTaskResult(taskId2);
+      url = await pollVideoTaskResult(taskId2 as string);
       if (url) {
-        console.log(`[EP04 Visual] ${stepLabel} async poll resolved:`, url.substring(0, 80));
+        console.log(`[EP04 Visual] ${stepLabel} async poll resolved:`, (url as string).substring(0, 80));
       }
     }
 
@@ -2536,13 +2536,13 @@ function EP04ProductionInner() {
     const isImageType = stepType.includes('image') || stepType === 'kinetic-text' || stepType === 'motion-graphics';
     // Deterministic counter: count existing entries of this type for this scene
     const stepCounter = String(Object.keys(results).filter(k => k.startsWith(`${stepType}-${sceneKey}`)).length).padStart(3, '0');
-    if (url && projectId && !isSupabaseStorageUrl(url)) {
+    if (url && projectId && !isSupabaseStorageUrl(url as string)) {
       const resultKey = `${stepType}-${sceneKey}-${stepCounter}`;
       try {
-        url = await ensureStorageUrl(projectId, resultKey, url, isImageType ? 'image' : 'video');
+        url = await ensureStorageUrl(projectId, resultKey, url as string, isImageType ? 'image' : 'video');
       } catch (mirrorErr) {
         console.warn(`[EP04 Visual] ${stepLabel}: mirror to Storage failed:`, mirrorErr);
-        if (isBase64DataUri(url)) url = null; // Never store base64 in results
+        if (isBase64DataUri(url as string)) url = null; // Never store base64 in results
       }
     }
 
@@ -2556,8 +2556,8 @@ function EP04ProductionInner() {
     }
     // Use actual provider from edge function response for accurate cost attribution.
     // Pass 1 as token count — cost table rates are per-unit for image/video providers.
-    const actualProvider = data?.provider || (step.provider as string) || 'alibaba';
-    if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 1, isPlaceholder ? null : url, actualProvider);
+    const actualProvider = (data?.provider as string) || (step.provider as string) || 'alibaba';
+    if (jobId && projectId) await completeGenerationJob(jobId, (data?.tokensUsed as number) || 1, isPlaceholder ? null : url, actualProvider);
   }, [projectId, screenshotUrls, scenes, scriptContentForUI, trackGenerationJob, completeGenerationJob]);
 
   const startSceneVisualProduction = useCallback(async (sceneKey: string, onlyTypes?: Set<string>, forceRegenAll = false) => {
@@ -6700,7 +6700,7 @@ function EP04ProductionInner() {
                                 onClick={() => {
                                   startSceneVisualProduction(sceneKey, undefined, true);
                                 }}
-                                disabled={status?.visual === 'generating' || pipelineSteps.length === 0}
+                                disabled={(status?.visual as string) === 'generating' || pipelineSteps.length === 0}
                               >
                                 <Film className="h-2.5 w-2.5 mr-0.5" />
                                 All
@@ -6725,7 +6725,7 @@ function EP04ProductionInner() {
                                   });
                                   startSceneVisualProduction(sceneKey, new Set(['avatar-lipsync']));
                                 }}
-                                disabled={status?.visual === 'generating' || pipelineSteps.length === 0}
+                                disabled={(status?.visual as string) === 'generating' || pipelineSteps.length === 0}
                               >
                                 <Mic className="h-2.5 w-2.5 mr-0.5" />
                                 Lipsync
@@ -6735,7 +6735,7 @@ function EP04ProductionInner() {
                                 onClick={() => {
                                   startSceneVisualProduction(sceneKey, new Set(['alibaba-image', 'storybook-frame', 'static-asset', 'kinetic-text', 'avatar-3d', 'motion-graphics', 'ai-screen-enhance', 'screen-capture']));
                                 }}
-                                disabled={status?.visual === 'generating' || pipelineSteps.length === 0}
+                                disabled={(status?.visual as string) === 'generating' || pipelineSteps.length === 0}
                               >
                                 <ImageIcon className="h-2.5 w-2.5 mr-0.5" />
                                 Images
@@ -6748,7 +6748,7 @@ function EP04ProductionInner() {
                                 onClick={() => {
                                   startSceneVisualProduction(sceneKey, new Set(['ai-screen-enhance', 'screen-capture']));
                                 }}
-                                disabled={status?.visual === 'generating' || pipelineSteps.length === 0}
+                                disabled={(status?.visual as string) === 'generating' || pipelineSteps.length === 0}
                               >
                                 <ImageIcon className="h-2.5 w-2.5 mr-0.5" />
                                 I2I
@@ -6758,7 +6758,7 @@ function EP04ProductionInner() {
                                 onClick={() => {
                                   startSceneVisualProduction(sceneKey, new Set(['alibaba-video', 'character-motion', 'character-animate-3d']));
                                 }}
-                                disabled={status?.visual === 'generating' || pipelineSteps.length === 0}
+                                disabled={(status?.visual as string) === 'generating' || pipelineSteps.length === 0}
                               >
                                 <Film className="h-2.5 w-2.5 mr-0.5" />
                                 Videos

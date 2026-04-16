@@ -93,17 +93,13 @@ class ScheduledPublishingService {
       const { data, error } = await supabase
         .from('scheduled_posts')
         .insert({
-          user_id: session.user.id as any,
-          content_id: content.content_id,
-          content_type: content.content_type,
-          title: content.title,
-          description: content.description || '',
-          platforms: content.platforms as unknown as Record<string, unknown>[],
-          scheduled_at: content.scheduled_at,
-          timezone: content.timezone,
+          user_id: session.user.id,
+          platform: content.platforms?.[0] || 'unknown',
+          content_data: { content_id: content.content_id, content_type: content.content_type, title: content.title, description: content.description || '', platforms: content.platforms, metadata: content.metadata || {} } as any,
+          scheduled_time: content.scheduled_at,
+          timezone: content.timezone || 'UTC',
           status: 'scheduled',
-          metadata: content.metadata || {},
-        })
+        } as any)
         .select()
         .single();
 

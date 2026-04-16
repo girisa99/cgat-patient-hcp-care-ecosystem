@@ -11,19 +11,38 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+interface ModelRow {
+  model_id: string;
+  provider: string;
+  status: string;
+  capabilities: string[];
+  replaced_by: string | null;
+  sunset_date: string | null;
+  model_alias: string[] | null;
+}
+
+interface RouteRow {
+  region: string;
+  capability: string;
+  primary_model_id: string;
+  fallback_model_ids: string[] | null;
+}
+
 export async function checkModelRegistryDB() {
   console.log('🗄️ Checking ai_model_registry DB table...\n');
 
   // 1. Total model count
-  const { data: allModels, error } = await supabase
+  const { data: allModels, error } = await (supabase as any)
     .from('ai_model_registry')
-    .select('model_id, provider, status, capabilities, replaced_by, sunset_date, model_alias');
+    .select('model_id, provider, status, capabilities, replaced_by, sunset_date, model_alias') as { data: ModelRow[] | null; error: any };
 
   if (error) {
     console.error('❌ DB query failed:', error.message);
     console.log('💡 Make sure the migration has been applied: 20260409030000_ai_model_registry.sql');
     return;
   }
+
+  if (!allModels) return;
 
   console.log(`📊 Total models in DB: ${allModels.length}\n`);
 
@@ -100,10 +119,10 @@ export async function checkModelRegistryDB() {
   }
 
   // 8. Regional routing
-  const { data: routes } = await supabase
+  const { data: routes } = await (supabase as any)
     .from('ai_model_regional_routing')
     .select('region, capability, primary_model_id, fallback_model_ids')
-    .eq('is_active', true);
+    .eq('is_active', true) as { data: RouteRow[] | null; error: any };
 
   if (routes) {
     console.log(`\n🌍 Regional routes: ${routes.length}`);
