@@ -152,7 +152,7 @@ export async function seedProjectFromTemplate(
           fallbackProvider: char.fallbackProvider,
           fallbackVoice: char.fallbackVoice,
         },
-      }, { onConflict: 'project_id,character_key' });
+      } as any, { onConflict: 'project_id,character_key' });
 
       if (error) console.warn(`[Seed] Character ${char.key}:`, error.message);
       await new Promise(r => setTimeout(r, 100)); // micro-delay
@@ -176,7 +176,7 @@ export async function seedProjectFromTemplate(
           transitions: scene.transitions,
           bookends: scene.bookends,
         },
-      }, { onConflict: 'project_id,scene_key' });
+      } as any, { onConflict: 'project_id,scene_key' });
 
       if (error) console.warn(`[Seed] Scene ${scene.key}:`, error.message);
       await new Promise(r => setTimeout(r, 100));
