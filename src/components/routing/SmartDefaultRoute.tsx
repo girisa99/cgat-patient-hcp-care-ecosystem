@@ -58,8 +58,20 @@ export const SmartDefaultRoute: React.FC<SmartDefaultRouteProps> = ({ userRoles,
     if (targetRoute && !isCheckingGenieUser) return;
 
     const determineRoute = async () => {
-      // First, check if this user is a Genie Suite internal user
-      // This takes priority over healthcare roles
+      // PRIORITY 1: Check healthcare roles FIRST — these users need the healthcare navigation
+      // Healthcare roles take precedence over Genie internal status
+      const normalizedRoles = normalizeRoles(userRoles);
+      const healthcareRoles = ['healthcareProvider', 'nurse', 'caseManager', 'patientCaregiver'];
+      const hasHealthcareRole = healthcareRoles.some(role => normalizedRoles.includes(role));
+
+      if (hasHealthcareRole) {
+        console.log('🎯 SmartDefaultRoute: Healthcare role detected, using role-based routing');
+        setIsCheckingGenieUser(false);
+        setTargetRoute(getDefaultRouteForRoles(normalizedRoles, isInternal));
+        return;
+      }
+
+      // PRIORITY 2: Check Genie Suite internal/subscriber status
       try {
         const { data: { user } } = await supabase.auth.getUser();
         
