@@ -6691,7 +6691,7 @@ function EP04ProductionInner() {
                             </Button>
                           )}
                           {/* Regenerate buttons for completed/errored scenes */}
-                          {(status?.visual === 'done' || status?.visual === 'error') && (() => {const sv = status?.visual as string; return (
+                          {(status?.visual === 'done' || status?.visual === 'error') && (
                             <div className="flex flex-col gap-1 mt-1">
                               {/* Row 1: Regen All + Lipsync + Images */}
                               <div className="flex gap-1">
