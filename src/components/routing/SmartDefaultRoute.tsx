@@ -41,14 +41,25 @@ interface SmartDefaultRouteProps {
 
 export const SmartDefaultRoute: React.FC<SmartDefaultRouteProps> = ({ userRoles, isInternal }) => {
   const location = useLocation();
+  
+  // Check healthcare roles synchronously — no need for async DB check
+  const normalizedRoles = normalizeRoles(userRoles);
+  const healthcareRoles = ['healthcareProvider', 'nurse', 'caseManager', 'patientCaregiver'];
+  const hasHealthcareRole = healthcareRoles.some(role => normalizedRoles.includes(role));
+
   const [targetRoute, setTargetRoute] = useState<string | null>(() => {
+    // Healthcare users get role-based routing immediately — skip Genie cache
+    if (hasHealthcareRole) {
+      return getDefaultRouteForRoles(normalizedRoles, isInternal);
+    }
     // FAST PATH: Use cached internal user status to avoid spinner/blank screen
     const cachedIsInternal = localStorage.getItem('genie_studio_is_internal');
     if (cachedIsInternal === 'true') return '/genie-cast';
     return null;
   });
   const [isCheckingGenieUser, setIsCheckingGenieUser] = useState(() => {
-    // Skip async check if we already have a cached route
+    // Healthcare users don't need async Genie check
+    if (hasHealthcareRole) return false;
     const cachedIsInternal = localStorage.getItem('genie_studio_is_internal');
     return cachedIsInternal !== 'true';
   });
@@ -58,8 +69,20 @@ export const SmartDefaultRoute: React.FC<SmartDefaultRouteProps> = ({ userRoles,
     if (targetRoute && !isCheckingGenieUser) return;
 
     const determineRoute = async () => {
-      // First, check if this user is a Genie Suite internal user
-      // This takes priority over healthcare roles
+      // PRIORITY 1: Check healthcare roles FIRST — these users need the healthcare navigation
+      // Healthcare roles take precedence over Genie internal status
+      const normalizedRoles = normalizeRoles(userRoles);
+      const healthcareRoles = ['healthcareProvider', 'nurse', 'caseManager', 'patientCaregiver'];
+      const hasHealthcareRole = healthcareRoles.some(role => normalizedRoles.includes(role));
+
+      if (hasHealthcareRole) {
+        console.log('🎯 SmartDefaultRoute: Healthcare role detected, using role-based routing');
+        setIsCheckingGenieUser(false);
+        setTargetRoute(getDefaultRouteForRoles(normalizedRoles, isInternal));
+        return;
+      }
+
+      // PRIORITY 2: Check Genie Suite internal/subscriber status
       try {
         const { data: { user } } = await supabase.auth.getUser();
         
