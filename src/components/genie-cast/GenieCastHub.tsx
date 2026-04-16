@@ -652,7 +652,7 @@ export const GenieCastHub: React.FC = () => {
     // Capture generation start for Label Studio training
     lsCast.captureGenerationStart({
       formatName: formatName || activeFormats?.[0],
-      provider: routing.video?.providerId || 'openai',
+      provider: routing.video?.provider || 'openai',
       region: session.selectedRegion || undefined,
       videoStyles: request.videoStyles,
       scriptLength: request.scriptContent?.length,
@@ -689,7 +689,7 @@ export const GenieCastHub: React.FC = () => {
     // Capture generation result for LS training
     lsCast.captureGenerationComplete({
       formatName: formatName || activeFormats?.[0],
-      provider: routing.video?.providerId || 'openai',
+      provider: routing.video?.provider || 'openai',
       duration: 0, // placeholder — real timing tracked by production hook
       success: !!success,
     });
