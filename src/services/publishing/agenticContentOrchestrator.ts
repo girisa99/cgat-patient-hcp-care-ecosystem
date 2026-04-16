@@ -688,7 +688,7 @@ async function runQualityReviewer(
   let totalWeight = 0;
 
   for (const rubric of rubrics) {
-    const evaluation: RubricEvaluation = await rubric.evaluate(ctx, {});
+    const evaluation: RubricEvaluation = await rubric.evaluate(ctx, {} as any);
     totalScore += evaluation.score * rubric.weight;
     totalWeight += rubric.weight;
     if (!evaluation.passed) {

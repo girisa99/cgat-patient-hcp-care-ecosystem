@@ -364,7 +364,7 @@ class UnifiedEcosystemPublishingService {
         custom_caption: t.customCaption,
         custom_title: t.customTitle,
         hashtags: t.hashtags,
-        visibility: t.visibility,
+        visibility: t.visibility as any,
       })),
       scheduled_at: scheduledAt,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,

@@ -256,7 +256,7 @@ export function buildCelebrationEnrichmentInput(
   }
 
   // 7. Build SceneEnrichmentInput
-  const enrichmentInput: SceneEnrichmentInput = {
+  const enrichmentInput: any = {
     title: buildTitle(request, culturalOverride),
     content: Object.values(enrichedScript),
     styleFamily: mapStyleFamily(request.visualStyle),

@@ -93,7 +93,7 @@ class ScheduledPublishingService {
       const { data, error } = await supabase
         .from('scheduled_posts')
         .insert({
-          user_id: session.user.id,
+          user_id: session.user.id as any,
           content_id: content.content_id,
           content_type: content.content_type,
           title: content.title,
