@@ -10,6 +10,7 @@
  */
 
 import React, { useState, useCallback, useEffect, useRef, useMemo, Suspense, lazy } from 'react';
+import { useNavigate } from 'react-router-dom';
 import arcAvatar from '@/assets/characters/arc-avatar.png';
 import oriAvatar from '@/assets/characters/ori-avatar.png';
 import type { VideoStyleType } from './VideoStyleCards';
@@ -34,6 +35,7 @@ import { quickEnhance, enhancePrompt, type PromptContext } from '@/services/prom
 import { useLSCastIntegration } from '@/hooks/useLSCastIntegration';
 import { useCastSceneEnrichment } from '@/hooks/useCastSceneEnrichment';
 import { useCastProjectPersistence } from '@/hooks/useCastProjectPersistence';
+import { useCastProjects } from '@/hooks/useCastProjects';
 import type { SceneEnrichmentInput } from '@/services/production/sceneEnrichmentEngine';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -351,19 +353,34 @@ const CastBackButton: React.FC<{ onClick: () => void; label?: string }> = ({ onC
 );
 
 // ── Navigation View Renderer ────────────────────────────────────────────────
-const NavViewContent: React.FC<{ view: NavView; onBack: () => void }> = ({ view, onBack }) => {
+const NavViewContent: React.FC<{ view: NavView; onBack: () => void; onCreateProject?: () => void }> = ({ view, onBack, onCreateProject }) => {
+  const navViewNavigate = useNavigate();
   switch (view) {
     case 'projects':
       return (
         <div className="p-4 space-y-4">
           <CastBackButton onClick={onBack} />
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <FolderOpen className="w-4 h-4 text-primary" />
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <FolderOpen className="w-4 h-4 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-foreground">Projects</h2>
+                <p className="text-xs text-muted-foreground">Your video content library</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-lg font-bold text-foreground">Projects</h2>
-              <p className="text-xs text-muted-foreground">Your video content library</p>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" onClick={() => navViewNavigate('/genie-cast/ep04-part2-production')} className="gap-1.5">
+                <Film className="w-3.5 h-3.5" />
+                EP04 Part 2
+              </Button>
+              {onCreateProject && (
+                <Button size="sm" onClick={onCreateProject} className="gap-1.5">
+                  <Zap className="w-3.5 h-3.5" />
+                  New Project
+                </Button>
+              )}
             </div>
           </div>
           <Suspense fallback={<NavViewFallback />}>
@@ -468,6 +485,8 @@ const NavViewContent: React.FC<{ view: NavView; onBack: () => void }> = ({ view,
 
 // ── Main Hub ─────────────────────────────────────────────────────────────────
 export const GenieCastHub: React.FC = () => {
+  const navigate = useNavigate();
+  const castProjects = useCastProjects();
   const isMounted = useRef(true);
   const isMobile = useIsMobile();
   const deviceType = useDeviceType();
@@ -714,6 +733,21 @@ export const GenieCastHub: React.FC = () => {
     if (newMode && newMode !== mode) handleModeChange(newMode);
   }, [mode, handleModeChange]);
 
+  // Create a new Cast project and navigate to production page
+  const handleCreateProject = useCallback(async () => {
+    try {
+      const project = await castProjects.createProject({
+        title: 'Untitled Project',
+        style_intent: 'general-explainer-auto',
+      });
+      if (project?.id) {
+        navigate(`/cast/production/${project.id}`);
+      }
+    } catch (err) {
+      console.error('[GenieCastHub] Failed to create project:', err);
+    }
+  }, [castProjects, navigate]);
+
   // Handle nav view changes — show dashboard when going back to workspace
   const handleViewChange = useCallback((view: NavView) => {
     setActiveView(view);
@@ -904,7 +938,7 @@ export const GenieCastHub: React.FC = () => {
             </div>
             <div className="cast-glass-shine" />
             <div className="relative z-[2]">
-              <NavViewContent view={activeView} onBack={() => handleViewChange('workspace')} />
+              <NavViewContent view={activeView} onBack={() => handleViewChange('workspace')} onCreateProject={handleCreateProject} />
             </div>
           </div>
         )}

@@ -268,6 +268,13 @@ const AppContent = () => {
                 </Suspense>
               } />
 
+              {/* EP04 Part 2 — launcher seeds template then redirects to generic production */}
+              <Route path="/genie-cast/ep04-part2-production" element={
+                <Suspense fallback={<PageLoading message="Preparing EP04 Part 2..." />}>
+                  {React.createElement(React.lazy(() => import('@/pages/EP04Part2Launcher')))}
+                </Suspense>
+              } />
+
               {/* Generic Cast Production — works for ANY project type */}
               <Route path="/cast/production/:projectId" element={
                 <Suspense fallback={<PageLoading message="Loading Cast Production..." />}>
