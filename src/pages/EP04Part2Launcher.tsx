@@ -42,7 +42,7 @@ export default function EP04Part2Launcher() {
           return;
         }
 
-        // Look up Part 2 project by exact style_intent (no legacy EP04 fallback)
+        // Look up Part 2 project by exact style_intent
         const { data: existing } = await supabase
           .from('cast_projects')
           .select('id')
@@ -53,7 +53,26 @@ export default function EP04Part2Launcher() {
 
         let projectId = existing?.id || null;
 
-        // Create new project if none found
+        // Verify it actually has Part 2 scenes (not a corrupted Part 1 project)
+        if (projectId) {
+          const { count } = await supabase
+            .from('cast_project_scenes')
+            .select('id', { count: 'exact', head: true })
+            .eq('project_id', projectId)
+            .like('scene_key', 'p2-%');
+
+          if ((count || 0) === 0) {
+            // This is a corrupted Part 1 project — reset its style_intent and start fresh
+            console.warn('[EP04Part2] Found project but no p2- scenes — resetting corrupted Part 1');
+            await supabase
+              .from('cast_projects')
+              .update({ style_intent: 'ep04-sprint-documentary' })
+              .eq('id', projectId);
+            projectId = null;
+          }
+        }
+
+        // Create new project if none found (or after corruption fix)
         if (!projectId) {
           const { data: created, error: createErr } = await supabase
             .from('cast_projects')
@@ -78,9 +97,14 @@ export default function EP04Part2Launcher() {
           projectId = created.id;
         }
 
-        // Seed if needed
-        const seeded = await isProjectSeeded(projectId);
-        if (!seeded) {
+        // Seed if no Part 2 scenes exist yet
+        const { count: p2SceneCount } = await supabase
+          .from('cast_project_scenes')
+          .select('id', { count: 'exact', head: true })
+          .eq('project_id', projectId)
+          .like('scene_key', 'p2-%');
+
+        if ((p2SceneCount || 0) === 0) {
           setStatus('seeding');
           const seedResult = await seedProjectFromTemplate(projectId, getEP04Part2Template());
           if (!seedResult.success) {
