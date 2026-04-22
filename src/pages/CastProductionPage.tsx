@@ -30,7 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Play, Pause, Square, Loader2, CheckCircle2, AlertCircle,
   Mic, Film, Music, Clapperboard, Download, RefreshCw, ArrowLeft,
-  Zap, XCircle, Wand2, Image,
+  Zap, XCircle, Wand2, Image, Share2, Save, Edit3, Users,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -69,6 +69,22 @@ import { generateScriptStructure, buildScriptGenerationPrompt, generateScriptCon
 
 // Centralized config + consent gates (M3 resolution, M6 GDPR/HIPAA)
 import { CAST_RESOLUTIONS, DEFAULT_RESOLUTION, CAST_LIMITS, requiresConsentGate, getConsentTypes, type CastResolution } from '@/config/castProductionConfig';
+
+// Scene type registry — generates pipeline steps from scene types
+import { sceneTypeToOrchestratorSteps } from '@/config/scene-type-registry';
+
+// Default voice ID for fallback
+import { DEFAULT_ELEVENLABS_VOICE_ID } from '@/config/universal-script-schema';
+
+// Character & voice editing panels
+import { VoiceSelector, type VoiceCharacter } from '@/components/genie-cast/production/VoiceSelector';
+import { CharacterEditor, type EditableCharacter } from '@/components/genie-cast/production/CharacterEditor';
+
+// Generic publish hub
+import { GenericPublishHub } from '@/components/genie-cast/production/GenericPublishHub';
+
+// Project CRUD (for publish status updates)
+import { useCastProjects } from '@/hooks/useCastProjects';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -272,6 +288,16 @@ export default function CastProductionPage() {
   // Credit enforcement — pre-flight checks before expensive operations
   const { canAfford, useCredits, getFeatureCost } = useAICredits();
 
+  // Project CRUD (for publish/status updates)
+  const castProjects = useCastProjects();
+
+  // Script editing state
+  const [editingLineKey, setEditingLineKey] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState('');
+
+  // Publish hub visibility
+  const [showPublishHub, setShowPublishHub] = useState(false);
+
   // H5: Per-user concurrency limit (max 3 concurrent jobs)
   const MAX_CONCURRENT_JOBS = 3;
   const checkConcurrency = useCallback(async (): Promise<boolean> => {
@@ -289,6 +315,44 @@ export default function CastProductionPage() {
       return true;
     } catch { return true; } // Fail open
   }, [projectId]);
+
+  // Voice validation — ensure all characters have voice IDs before TTS
+  const validateVoices = useCallback(async (): Promise<boolean> => {
+    const missingVoice = characters.filter(c => !c.voice_id);
+    if (missingVoice.length === 0) return true;
+
+    // Auto-fill missing voices with default
+    toast.info(`Assigning default voice to ${missingVoice.length} character(s)...`);
+    const untypedSb = supabase as any;
+    for (const char of missingVoice) {
+      await untypedSb
+        .from('cast_project_characters')
+        .update({
+          voice_id: DEFAULT_ELEVENLABS_VOICE_ID,
+          voice_provider: char.voice_provider || 'elevenlabs',
+        })
+        .eq('id', char.id);
+    }
+    // Update local state
+    setCharacters(prev => prev.map(c =>
+      !c.voice_id ? { ...c, voice_id: DEFAULT_ELEVENLABS_VOICE_ID, voice_provider: c.voice_provider || 'elevenlabs' } : c
+    ));
+    return true;
+  }, [characters]);
+
+  // Script line editing — save to DB
+  const handleSaveLineEdit = useCallback(async (lineKey: string, newText: string) => {
+    const line = scriptLines.find(l => l.line_key === lineKey);
+    if (!line) return;
+    const untypedSb = supabase as any;
+    await untypedSb
+      .from('cast_project_script_lines')
+      .update({ dialogue: newText })
+      .eq('id', line.id);
+    setScriptLines(prev => prev.map(l => l.line_key === lineKey ? { ...l, dialogue: newText } : l));
+    setEditingLineKey(null);
+    toast.success('Line updated');
+  }, [scriptLines]);
 
   // Restore TTS from DB on load
   useEffect(() => {
@@ -511,7 +575,7 @@ export default function CastProductionPage() {
           key: s.id,
           title: s.title,
           sceneIndex: i,
-          pipeline: [], // Pipeline steps will be auto-generated from scene type
+          pipeline: sceneTypeToOrchestratorSteps(s.sceneType || 'dialogue'),
           musicConfig: s.music ? {
             prompt: s.music.prompt || '',
             duration: s.durationEst,
@@ -882,6 +946,72 @@ export default function CastProductionPage() {
 
       {/* Main content */}
       <div className="max-w-7xl mx-auto px-4 py-6">
+        {/* Character & Voice configuration panels — collapsible */}
+        {currentPhase === 'tts' && !tts.batchProgress && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+            <CharacterEditor
+              projectId={projectId}
+              characters={characters as EditableCharacter[]}
+              onUpdate={(updated) => setCharacters(updated as any)}
+            />
+            <VoiceSelector
+              projectId={projectId}
+              characters={characters as VoiceCharacter[]}
+              onUpdate={(updated) => setCharacters(updated as any)}
+            />
+          </div>
+        )}
+
+        {/* Inline script editing — editable before starting TTS */}
+        {currentPhase === 'tts' && !tts.batchProgress && scriptLineData.length > 0 && (
+          <Card className="mb-6">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Edit3 className="w-4 h-4 text-primary" />
+                <h3 className="text-sm font-semibold">Script Editor</h3>
+                <Badge variant="outline" className="text-[10px]">{scriptLineData.length} lines</Badge>
+              </div>
+              <ScrollArea className="max-h-[300px]">
+                <div className="space-y-1">
+                  {scriptLineData.map(line => (
+                    <div key={line.key} className="flex items-center gap-2 p-2 rounded border border-border/20 hover:bg-muted/20 group">
+                      <Badge variant="secondary" className="text-[10px] shrink-0 w-20 text-center">{line.characterKey}</Badge>
+                      {editingLineKey === line.key ? (
+                        <div className="flex-1 flex gap-1">
+                          <textarea
+                            className="flex-1 text-xs p-1 rounded border bg-background min-h-[32px] resize-y"
+                            value={editingText}
+                            onChange={e => setEditingText(e.target.value)}
+                            autoFocus
+                          />
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleSaveLineEdit(line.key, editingText)}>
+                            <Save className="w-3 h-3 text-green-500" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setEditingLineKey(null)}>
+                            <XCircle className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="flex-1 text-xs truncate">{line.text || '(empty — click to edit)'}</p>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => { setEditingLineKey(line.key); setEditingText(line.text); }}
+                          >
+                            <Edit3 className="w-3 h-3" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        )}
+
         <Tabs value={currentPhase} onValueChange={(v) => phaseManager.setPhase(v as any)}>
           <TabsList className="mb-4">
             <TabsTrigger value="tts"><Mic className="h-4 w-4 mr-1" /> TTS</TabsTrigger>
@@ -908,7 +1038,7 @@ export default function CastProductionPage() {
                         <XCircle className="h-4 w-4 mr-1" /> Cancel
                       </Button>
                     ) : (
-                      <Button onClick={tts.generateAll} disabled={tts.doneCount === tts.totalCount}>
+                      <Button onClick={async () => { await validateVoices(); tts.generateAll(); }} disabled={tts.doneCount === tts.totalCount}>
                         <Zap className="h-4 w-4 mr-1" /> Generate All
                       </Button>
                     )}
@@ -922,49 +1052,121 @@ export default function CastProductionPage() {
                   />
                 )}
 
-                <ScrollArea className="h-[500px]">
-                  <div className="space-y-2">
-                    {scriptLineData.map(line => (
-                      <div
-                        key={line.key}
-                        className={cn(
-                          'flex items-center gap-3 p-3 rounded-lg border',
-                          tts.statusMap[line.key] === 'done' && 'border-green-500/30 bg-green-500/5',
-                          tts.statusMap[line.key] === 'error' && 'border-red-500/30 bg-red-500/5',
-                          tts.statusMap[line.key] === 'generating' && 'border-blue-500/30 bg-blue-500/5',
-                        )}
-                      >
-                        <Badge variant="outline" className="text-xs shrink-0">
-                          {line.characterKey}
-                        </Badge>
-                        <p className="text-sm flex-1 truncate">{line.text || '(visual-only)'}</p>
-                        <div className="flex items-center gap-1 shrink-0">
-                          {tts.statusMap[line.key] === 'generating' && (
-                            <Loader2 className="h-4 w-4 animate-spin text-blue-400" />
-                          )}
-                          {tts.statusMap[line.key] === 'done' && (
-                            <>
-                              <CheckCircle2 className="h-4 w-4 text-green-400" />
-                              <Button variant="ghost" size="sm" onClick={() =>
-                                tts.playingKey === line.key ? tts.stopPlayback() : tts.playLine(line.key)
-                              }>
-                                {tts.playingKey === line.key ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
-                              </Button>
-                            </>
-                          )}
-                          {tts.statusMap[line.key] === 'error' && (
-                            <Button variant="ghost" size="sm" onClick={() => tts.generateLine(line.key)}>
-                              <RefreshCw className="h-3 w-3" />
-                            </Button>
-                          )}
-                          {!tts.statusMap[line.key] && (
-                            <Button variant="ghost" size="sm" onClick={() => tts.generateLine(line.key)}>
-                              <Mic className="h-3 w-3" />
-                            </Button>
-                          )}
+                <ScrollArea className="h-[600px]">
+                  <div className="space-y-4">
+                    {scenes.map(scene => {
+                      const sceneLines = scriptLinesByScene[scene.scene_key] || [];
+                      const sceneDone = sceneLines.filter(l => tts.statusMap[l.key] === 'done').length;
+                      if (sceneLines.length === 0) return null;
+
+                      return (
+                        <div key={scene.scene_key} className="border rounded-lg overflow-hidden">
+                          {/* Scene header */}
+                          <div className="bg-muted/50 px-4 py-2 flex items-center justify-between border-b">
+                            <div className="flex items-center gap-2">
+                              <Film className="h-3.5 w-3.5 text-primary" />
+                              <span className="text-sm font-semibold">{scene.title}</span>
+                              <Badge variant="outline" className="text-[10px]">
+                                {sceneDone}/{sceneLines.length} done
+                              </Badge>
+                            </div>
+                            <span className="text-[10px] text-muted-foreground">{scene.scene_key}</span>
+                          </div>
+                          {/* Lines in this scene */}
+                          <div className="divide-y divide-border/30">
+                            {sceneLines.map(sl => {
+                              const lineData = scriptLineData.find(l => l.key === sl.key);
+                              if (!lineData) return null;
+                              const charObj = characters.find(c => c.character_key === lineData.characterKey);
+                              const voiceLabel = charObj
+                                ? `${charObj.display_name} (${charObj.voice_provider})`
+                                : lineData.characterKey;
+
+                              return (
+                                <div
+                                  key={lineData.key}
+                                  className={cn(
+                                    'flex items-center gap-3 px-4 py-2',
+                                    tts.statusMap[lineData.key] === 'done' && 'bg-green-500/5',
+                                    tts.statusMap[lineData.key] === 'error' && 'bg-red-500/5',
+                                    tts.statusMap[lineData.key] === 'generating' && 'bg-blue-500/5',
+                                  )}
+                                >
+                                  <Badge variant="outline" className="text-[10px] shrink-0 min-w-[90px] text-center">
+                                    {voiceLabel}
+                                  </Badge>
+                                  <p className="text-xs flex-1 line-clamp-2">{lineData.text || '(visual-only)'}</p>
+                                  <span className="text-[10px] text-muted-foreground shrink-0 w-8 text-right">
+                                    {lineData.durationEst}s
+                                  </span>
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    {tts.statusMap[lineData.key] === 'generating' && (
+                                      <Loader2 className="h-4 w-4 animate-spin text-blue-400" />
+                                    )}
+                                    {tts.statusMap[lineData.key] === 'done' && (
+                                      <>
+                                        <CheckCircle2 className="h-4 w-4 text-green-400" />
+                                        <Button variant="ghost" size="sm" onClick={() =>
+                                          tts.playingKey === lineData.key ? tts.stopPlayback() : tts.playLine(lineData.key)
+                                        }>
+                                          {tts.playingKey === lineData.key ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+                                        </Button>
+                                      </>
+                                    )}
+                                    {tts.statusMap[lineData.key] === 'error' && (
+                                      <Button variant="ghost" size="sm" onClick={() => tts.generateLine(lineData.key)}>
+                                        <RefreshCw className="h-3 w-3" />
+                                      </Button>
+                                    )}
+                                    {!tts.statusMap[lineData.key] && (
+                                      <Button variant="ghost" size="sm" onClick={() => tts.generateLine(lineData.key)}>
+                                        <Mic className="h-3 w-3" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {/* Lines without a scene (bridges, transitions) */}
+                    {scriptLineData.filter(l => !l.sceneKey || !scenes.find(s => s.scene_key === l.sceneKey)).length > 0 && (
+                      <div className="border rounded-lg overflow-hidden">
+                        <div className="bg-muted/50 px-4 py-2 border-b">
+                          <span className="text-sm font-semibold text-muted-foreground">Narrator Bridges / Transitions</span>
+                        </div>
+                        <div className="divide-y divide-border/30">
+                          {scriptLineData.filter(l => !l.sceneKey || !scenes.find(s => s.scene_key === l.sceneKey)).map(lineData => (
+                            <div
+                              key={lineData.key}
+                              className={cn(
+                                'flex items-center gap-3 px-4 py-2',
+                                tts.statusMap[lineData.key] === 'done' && 'bg-green-500/5',
+                                tts.statusMap[lineData.key] === 'error' && 'bg-red-500/5',
+                              )}
+                            >
+                              <Badge variant="outline" className="text-[10px] shrink-0">{lineData.characterKey}</Badge>
+                              <p className="text-xs flex-1 line-clamp-2">{lineData.text}</p>
+                              <div className="flex items-center gap-1 shrink-0">
+                                {tts.statusMap[lineData.key] === 'done' && <CheckCircle2 className="h-4 w-4 text-green-400" />}
+                                {tts.statusMap[lineData.key] === 'error' && (
+                                  <Button variant="ghost" size="sm" onClick={() => tts.generateLine(lineData.key)}>
+                                    <RefreshCw className="h-3 w-3" />
+                                  </Button>
+                                )}
+                                {!tts.statusMap[lineData.key] && (
+                                  <Button variant="ghost" size="sm" onClick={() => tts.generateLine(lineData.key)}>
+                                    <Mic className="h-3 w-3" />
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </ScrollArea>
               </CardContent>
@@ -1096,7 +1298,7 @@ export default function CastProductionPage() {
                       controls
                       className="w-full max-w-3xl mx-auto rounded-lg mb-4"
                     />
-                    <div className="flex gap-2 justify-center">
+                    <div className="flex gap-2 justify-center mb-6">
                       <Button variant="outline" asChild>
                         <a
                           href={assembly.finalVideoUrl}
@@ -1104,10 +1306,23 @@ export default function CastProductionPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          <Download className="h-4 w-4 mr-1" /> Download {projectTitle}
+                          <Download className="h-4 w-4 mr-1" /> Download
                         </a>
                       </Button>
+                      <Button onClick={() => setShowPublishHub(prev => !prev)}>
+                        <Share2 className="h-4 w-4 mr-1" /> {showPublishHub ? 'Hide Publish' : 'Publish'}
+                      </Button>
                     </div>
+                    {showPublishHub && assembly.finalVideoUrl && (
+                      <div className="max-w-3xl mx-auto mt-4">
+                        <GenericPublishHub
+                          projectId={projectId}
+                          finalVideoUrl={assembly.finalVideoUrl}
+                          projectTitle={projectTitle}
+                          onPublished={() => toast.success('Project published!')}
+                        />
+                      </div>
+                    )}
                   </div>
                 ) : assembly.isAssembling || assembly.assemblyProgress ? (
                   <div className="text-center">

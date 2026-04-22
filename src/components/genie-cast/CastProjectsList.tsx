@@ -83,7 +83,7 @@ export const CastProjectsList: React.FC = () => {
       {projects.map((project) => (
         <Card
           key={project.id}
-          onClick={() => navigate(`/ep04-production?projectId=${project.id}`)}
+          onClick={() => navigate(`/cast/production/${project.id}`)}
           className="group hover:shadow-md transition-all cursor-pointer border-border/30 hover:border-primary/20"
         >
           <CardContent className="p-4 space-y-3">
