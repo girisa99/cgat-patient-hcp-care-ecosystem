@@ -168,20 +168,23 @@ export async function lookupOrCreateProject(
     return { projectId: existing.id, error: null };
   }
 
-  // Step 2: Legacy title fallback
-  const { data: legacyExisting } = await db
-    .from('cast_projects')
-    .select('id')
-    .eq('user_id', userId)
-    .ilike('title', '%EP04%')
-    .limit(1)
-    .maybeSingle();
+  // Step 2: Legacy title fallback — only for the original Part 1 style intent
+  // (prevents Part 2 or other EP04 variants from hijacking Part 1's project)
+  if (styleIntent === 'ep04-sprint-documentary') {
+    const { data: legacyExisting } = await db
+      .from('cast_projects')
+      .select('id')
+      .eq('user_id', userId)
+      .ilike('title', '%EP04%')
+      .limit(1)
+      .maybeSingle();
 
-  if (legacyExisting?.id) {
-    await db.from('cast_projects')
-      .update({ style_intent: styleIntent })
-      .eq('id', legacyExisting.id);
-    return { projectId: legacyExisting.id, error: null };
+    if (legacyExisting?.id) {
+      await db.from('cast_projects')
+        .update({ style_intent: styleIntent })
+        .eq('id', legacyExisting.id);
+      return { projectId: legacyExisting.id, error: null };
+    }
   }
 
   // Step 3: Create new project

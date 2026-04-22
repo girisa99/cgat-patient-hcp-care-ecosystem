@@ -30,7 +30,6 @@ export default function EP04Part2Launcher() {
       try {
         // Dynamic imports to keep this chunk minimal
         const { supabase } = await import('@/integrations/supabase/client');
-        const { lookupOrCreateProject } = await import('@/services/castProjectQueries');
         const { isProjectSeeded, seedProjectFromTemplate } = await import('@/utils/seedProjectFromTemplate');
         const { getEP04Part2Template } = await import('@/templates/ep04-part2-documentary.template');
 
@@ -43,15 +42,41 @@ export default function EP04Part2Launcher() {
           return;
         }
 
-        // Look up or create project
-        const result = await lookupOrCreateProject(userId, STYLE_INTENT);
-        if (result.error || !result.projectId) {
-          setErrorMsg(result.error || 'Failed to create project');
-          setStatus('error');
-          return;
-        }
+        // Look up Part 2 project by exact style_intent (no legacy EP04 fallback)
+        const { data: existing } = await supabase
+          .from('cast_projects')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('style_intent', STYLE_INTENT)
+          .limit(1)
+          .maybeSingle();
 
-        const projectId = result.projectId;
+        let projectId = existing?.id || null;
+
+        // Create new project if none found
+        if (!projectId) {
+          const { data: created, error: createErr } = await supabase
+            .from('cast_projects')
+            .insert({
+              user_id: userId,
+              title: 'EP04 Part 2 — The Production',
+              description: 'Beyond AI Hype Episode 2, Part 2 — 16 scenes, 9 voices, ~30 min',
+              status: 'scripted',
+              style_intent: STYLE_INTENT,
+              quality: 'production',
+              target_regions: ['global'],
+              selected_dialects: ['en-US'],
+            })
+            .select('id')
+            .single();
+
+          if (createErr || !created) {
+            setErrorMsg(createErr?.message || 'Failed to create project');
+            setStatus('error');
+            return;
+          }
+          projectId = created.id;
+        }
 
         // Seed if needed
         const seeded = await isProjectSeeded(projectId);
