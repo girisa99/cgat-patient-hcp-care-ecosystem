@@ -199,26 +199,37 @@ export function StoryOverview({ scenes, scriptLineData, characters }: Props) {
                         {visualSteps.length === 0 ? (
                           <p className="text-[11px] text-muted-foreground italic">No visual generation steps configured</p>
                         ) : (
-                          visualSteps.map((step, i) => (
-                            <div key={i} className="flex gap-2 items-start text-xs">
-                              <Badge variant="outline" className="text-[10px] shrink-0 gap-1">
-                                {stepIcon(step.type)}
-                                {step.type}
-                              </Badge>
-                              <div className="flex-1 min-w-0">
-                                <p className="leading-snug text-muted-foreground">
-                                  {step.prompt || (step.character ? `Character: ${step.character}` : null) || (step.characters ? `Characters: ${step.characters.join(' + ')}` : null) || step.text || '(no prompt)'}
-                                </p>
-                                {(step.model || step.provider || step.style) && (
-                                  <div className="flex gap-1 mt-1 flex-wrap">
-                                    {step.model && <Badge variant="secondary" className="text-[9px] py-0 px-1.5">model: {step.model}</Badge>}
-                                    {step.provider && <Badge variant="secondary" className="text-[9px] py-0 px-1.5">via: {step.provider}</Badge>}
-                                    {step.style && <Badge variant="secondary" className="text-[9px] py-0 px-1.5">style: {step.style}</Badge>}
-                                  </div>
-                                )}
+                          visualSteps.map((step, i) => {
+                            const character = readStr(step, 'character');
+                            const charactersRaw = step['characters'];
+                            const characters = Array.isArray(charactersRaw) ? charactersRaw.filter((x): x is string => typeof x === 'string') : null;
+                            const model = readStr(step, 'model');
+                            const provider = readStr(step, 'provider');
+                            const style = readStr(step, 'style');
+                            const promptText = step.prompt
+                              || (character ? `Character: ${character}` : null)
+                              || (characters && characters.length ? `Characters: ${characters.join(' + ')}` : null)
+                              || readStr(step, 'text')
+                              || '(no prompt)';
+                            return (
+                              <div key={i} className="flex gap-2 items-start text-xs">
+                                <Badge variant="outline" className="text-[10px] shrink-0 gap-1">
+                                  {stepIcon(step.type)}
+                                  {step.type}
+                                </Badge>
+                                <div className="flex-1 min-w-0">
+                                  <p className="leading-snug text-muted-foreground">{promptText}</p>
+                                  {(model || provider || style) && (
+                                    <div className="flex gap-1 mt-1 flex-wrap">
+                                      {model && <Badge variant="secondary" className="text-[9px] py-0 px-1.5">model: {model}</Badge>}
+                                      {provider && <Badge variant="secondary" className="text-[9px] py-0 px-1.5">via: {provider}</Badge>}
+                                      {style && <Badge variant="secondary" className="text-[9px] py-0 px-1.5">style: {style}</Badge>}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          ))
+                            );
+                          })
                         )}
                       </div>
                     </div>
