@@ -235,20 +235,28 @@ export function StoryOverview({ scenes, scriptLineData, characters }: Props) {
                     </div>
                   </div>
 
-                  {/* Transition between scenes */}
+                  {/* Transition between scenes — fully data-driven */}
                   {idx < scenes.length - 1 && (
                     <div className="flex items-center gap-2 my-2 px-2 text-[11px] text-muted-foreground">
                       <ArrowDown className="h-3.5 w-3.5 shrink-0 text-primary/60" />
                       {transitionStep ? (
                         <>
                           <Badge variant="outline" className="text-[10px]">
-                            transition · {transitionStep.style || 'cut'}
+                            {transitionStep.type || 'transition'}
+                            {readStr(transitionStep, 'style') ? ` · ${readStr(transitionStep, 'style')}` : ''}
                           </Badge>
-                          <span className="italic line-clamp-1">{transitionStep.prompt || `Hard cut to next scene`}</span>
-                          {transitionStep.duration && (
+                          {transitionStep.prompt && (
+                            <span className="italic line-clamp-1">{transitionStep.prompt}</span>
+                          )}
+                          {typeof transitionStep.duration === 'number' && (
                             <span className="ml-auto text-[10px]">{transitionStep.duration}s</span>
                           )}
                         </>
+                      ) : (
+                        <span className="italic">Direct cut</span>
+                      )}
+                    </div>
+                  )}
                       ) : (
                         <span className="italic">Hard cut to next scene</span>
                       )}
