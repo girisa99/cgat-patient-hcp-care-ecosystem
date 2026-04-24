@@ -257,11 +257,6 @@ export function StoryOverview({ scenes, scriptLineData, characters }: Props) {
                       )}
                     </div>
                   )}
-                      ) : (
-                        <span className="italic">Hard cut to next scene</span>
-                      )}
-                    </div>
-                  )}
                 </div>
               );
             })}
