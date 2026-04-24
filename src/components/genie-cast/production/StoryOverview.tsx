@@ -137,8 +137,8 @@ export function StoryOverview({ scenes, scriptLineData, characters }: Props) {
               const sceneLines = scriptLineData.filter(l => l.sceneKey === scene.scene_key);
               const pipeline = (scene.scene_config?.pipeline as PipelineStep[] | undefined) || [];
 
-              const visualSteps = pipeline.filter(s => s.type && VISUAL_STEP_TYPES.has(s.type));
-              const transitionStep = pipeline.find(s => s.type && TRANSITION_STEP_TYPES.has(s.type));
+              const visualSteps = pipeline.filter(isVisualStep);
+              const transitionStep = pipeline.find(isTransitionStep);
 
               return (
                 <div key={scene.scene_key}>
