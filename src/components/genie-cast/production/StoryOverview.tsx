@@ -40,36 +40,58 @@ export interface StoryOverviewCharacter {
   voice_provider?: string;
 }
 
-interface PipelineStep {
+/**
+ * Pipeline step shape is intentionally open — providers/models/types come from
+ * templates and the DB, not from this component. We only inspect well-known
+ * keys (type, prompt, etc.) when present.
+ */
+type PipelineStep = Record<string, unknown> & {
   type?: string;
   prompt?: string;
-  model?: string;
-  provider?: string;
-  style?: string;
-  variant?: string;
   duration?: number;
-  character?: string;
-  characters?: string[];
-  voice?: string;
-  scriptKey?: string;
-  text?: string;
+};
+
+// ─── Dynamic categorization (no hardcoded type allow-lists) ────────────
+// Anything with type === 'tts' is dialogue; anything matching /transition/i is
+// a transition; anything else with a prompt/character/characters is treated as
+// a visual step. New step types added to templates work automatically.
+
+function isTtsStep(step: PipelineStep): boolean {
+  return typeof step.type === 'string' && step.type.toLowerCase() === 'tts';
 }
 
-const VISUAL_STEP_TYPES = new Set([
-  'alibaba-image', 'alibaba-video', 'gemini-image', 'gemini-video', 'flux-image',
-  'avatar-3d', 'avatar-lipsync', 'character-interaction', 'character-motion',
-  'storybook-frame', 'narrator-scroll', 'kinetic-text',
-]);
+function isTransitionStep(step: PipelineStep): boolean {
+  return typeof step.type === 'string' && /transition/i.test(step.type);
+}
 
-const TRANSITION_STEP_TYPES = new Set(['scene-transition', 'transition']);
+function isVisualStep(step: PipelineStep): boolean {
+  if (!step.type) return false;
+  if (isTtsStep(step) || isTransitionStep(step)) return false;
+  // Anything with creative content (prompt, character cue, raw text) is visual
+  return Boolean(step.prompt || step['character'] || step['characters'] || step['text']);
+}
 
-function stepIcon(type?: string) {
+// ─── Dynamic icon mapping by keyword ────────────────────────────────────
+// Open-ended: any new step type is matched by substring. Falls back to Sparkles.
+const ICON_KEYWORDS: Array<{ match: RegExp; icon: React.ReactNode }> = [
+  { match: /tts|voice|narrat/i, icon: <Mic className="h-3.5 w-3.5" /> },
+  { match: /video|motion|lipsync|cinematic/i, icon: <Film className="h-3.5 w-3.5" /> },
+  { match: /image|avatar|storybook|scroll|frame|illustration/i, icon: <ImageIcon className="h-3.5 w-3.5" /> },
+  { match: /interaction|character/i, icon: <Users className="h-3.5 w-3.5" /> },
+];
+
+function stepIcon(type?: string): React.ReactNode {
   if (!type) return <Sparkles className="h-3.5 w-3.5" />;
-  if (type.includes('video') || type.includes('motion') || type.includes('lipsync')) return <Film className="h-3.5 w-3.5" />;
-  if (type.includes('image') || type.includes('avatar') || type.includes('storybook') || type.includes('scroll')) return <ImageIcon className="h-3.5 w-3.5" />;
-  if (type === 'tts') return <Mic className="h-3.5 w-3.5" />;
-  if (type.includes('interaction')) return <Users className="h-3.5 w-3.5" />;
+  for (const { match, icon } of ICON_KEYWORDS) {
+    if (match.test(type)) return icon;
+  }
   return <Sparkles className="h-3.5 w-3.5" />;
+}
+
+// Read an optional string field from a loose pipeline step
+function readStr(step: PipelineStep, key: string): string | undefined {
+  const v = step[key];
+  return typeof v === 'string' ? v : undefined;
 }
 
 interface Props {
