@@ -508,11 +508,10 @@ export const EP04_PART2_MUSIC_SCORE: Record<string, {
 // EP04_PART2_SCENE_PIPELINES — per-scene production steps
 // ---------------------------------------------------------------------------
 
-// Part 2 widens the TTS step's `voice` field to include 4 new characters (owl, reel, maestro, forge)
-// that Part 1's ScenePipelineStep type doesn't know about. Cast through `unknown` to a relaxed shape.
-type Part2PipelineStep = Omit<ScenePipelineStep, never> | { type: 'tts'; voice: EP04Part2Voice; scriptKey: string };
-
-export const EP04_PART2_SCENE_PIPELINES: Record<string, Part2PipelineStep[]> = {
+// Part 2 introduces 4 new characters (owl, reel, maestro, forge) that Part 1's
+// strict ScenePipelineStep discriminated union doesn't know about. Loosen the
+// record value type — the data is persisted as JSONB and validated at runtime.
+export const EP04_PART2_SCENE_PIPELINES: Record<string, Array<Record<string, unknown>>> = {
 
   // Scene 0 — Cold Open: "What You're About to See"
   'p2-scene-0-cold-open': [
