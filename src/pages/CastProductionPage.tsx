@@ -1016,6 +1016,7 @@ export default function CastProductionPage() {
         )}
 
         <Tabs value={currentPhase} onValueChange={(v) => phaseManager.setPhase(v as any)}>
+          {/* Note: 'story' is a read-only overview tab — cast bypasses ProductionPhase union */}
           <TabsList className="mb-4">
             <TabsTrigger value="story"><MessageSquare className="h-4 w-4 mr-1" /> Story</TabsTrigger>
             <TabsTrigger value="tts"><Mic className="h-4 w-4 mr-1" /> TTS</TabsTrigger>
