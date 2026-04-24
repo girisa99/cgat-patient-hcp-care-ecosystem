@@ -181,11 +181,11 @@ export function buildEP04Part2Template(): ProjectTemplate {
   // Bookends
   const bookends: ProjectTemplate['bookends'] = EP04_PART2_STORYBOOK_BOOKENDS ? {
     opening: {
-      duration: EP04_PART2_STORYBOOK_BOOKENDS.opening.reduce((sum, s) => sum + (s.duration || 5), 0),
+      duration: (EP04_PART2_STORYBOOK_BOOKENDS.opening as ReadonlyArray<{ duration?: number }>).reduce((sum, s) => sum + (s.duration || 5), 0),
       title: 'EP04 Part 2 — The Production',
     },
     closing: {
-      duration: EP04_PART2_STORYBOOK_BOOKENDS.closing.reduce((sum, s) => sum + (s.duration || 5), 0),
+      duration: (EP04_PART2_STORYBOOK_BOOKENDS.closing as ReadonlyArray<{ duration?: number }>).reduce((sum, s) => sum + (s.duration || 5), 0),
       title: 'The End... For Now',
     },
   } : undefined;

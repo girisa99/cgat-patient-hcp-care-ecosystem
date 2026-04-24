@@ -15,7 +15,9 @@ import { CAST_STORAGE } from '@/config/castProductionConfig';
 // ─── Retry Helper (L42: 3× retry with exponential backoff) ─────────────────
 
 const TTS_RETRY_BACKOFFS = [0, 2000, 6000]; // 0s, 2s, 6s (fast for TTS)
-const TTS_TIMEOUT_MS = 30000; // 30s per TTS call
+
+// Note: NO client-side race timeout. Cold-start TTS providers (CosyVoice, Alibaba)
+// can legitimately take 60-90s. We rely on the edge function's own timeout + retries.
 
 async function invokeTtsWithRetry(
   body: Record<string, unknown>,
@@ -30,11 +32,7 @@ async function invokeTtsWithRetry(
     }
 
     try {
-      const invokePromise = supabase.functions.invoke('multi-provider-tts', { body });
-      const timeoutPromise = new Promise<{ data: null; error: { message: string } }>(resolve =>
-        setTimeout(() => resolve({ data: null, error: { message: `TTS timed out after ${TTS_TIMEOUT_MS / 1000}s` } }), TTS_TIMEOUT_MS)
-      );
-      const result = await Promise.race([invokePromise, timeoutPromise]);
+      const result = await supabase.functions.invoke('multi-provider-tts', { body });
 
       if (!result.error) return result as { data: Record<string, unknown>; error: null };
 

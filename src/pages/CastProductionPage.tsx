@@ -30,7 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Play, Pause, Square, Loader2, CheckCircle2, AlertCircle,
   Mic, Film, Music, Clapperboard, Download, RefreshCw, ArrowLeft,
-  Zap, XCircle, Wand2, Image, Share2, Save, Edit3, Users,
+  Zap, XCircle, Wand2, Image, Share2, Save, Edit3, Users, MessageSquare,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -82,6 +82,9 @@ import { CharacterEditor, type EditableCharacter } from '@/components/genie-cast
 
 // Generic publish hub
 import { GenericPublishHub } from '@/components/genie-cast/production/GenericPublishHub';
+
+// Story overview — read-only complete production map (script + visual prompts + transitions)
+import { StoryOverview } from '@/components/genie-cast/production/StoryOverview';
 
 // Project CRUD (for publish status updates)
 import { useCastProjects } from '@/hooks/useCastProjects';
@@ -1013,13 +1016,24 @@ export default function CastProductionPage() {
         )}
 
         <Tabs value={currentPhase} onValueChange={(v) => phaseManager.setPhase(v as any)}>
+          {/* Note: 'story' is a read-only overview tab — cast bypasses ProductionPhase union */}
           <TabsList className="mb-4">
+            <TabsTrigger value="story"><MessageSquare className="h-4 w-4 mr-1" /> Story</TabsTrigger>
             <TabsTrigger value="tts"><Mic className="h-4 w-4 mr-1" /> TTS</TabsTrigger>
             <TabsTrigger value="tts_approved" disabled={!phaseManager.isPhaseComplete('tts')}>Approve</TabsTrigger>
             <TabsTrigger value="visual" disabled={!phaseManager.isPhaseComplete('tts')}><Film className="h-4 w-4 mr-1" /> Visuals</TabsTrigger>
             <TabsTrigger value="music" disabled={!phaseManager.isPhaseComplete('visual')}><Music className="h-4 w-4 mr-1" /> Music</TabsTrigger>
             <TabsTrigger value="assembly" disabled={!phaseManager.isPhaseComplete('music')}><Clapperboard className="h-4 w-4 mr-1" /> Assembly</TabsTrigger>
           </TabsList>
+
+          {/* ─── Story Map: read-only overview of script + visual prompts + transitions ─── */}
+          <TabsContent value="story">
+            <StoryOverview
+              scenes={scenes}
+              scriptLineData={scriptLineData}
+              characters={characters}
+            />
+          </TabsContent>
 
           {/* ─── Phase 1: TTS Generation ─────────────────────────── */}
           <TabsContent value="tts">
