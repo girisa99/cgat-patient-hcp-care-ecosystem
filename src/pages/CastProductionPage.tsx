@@ -30,7 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Play, Pause, Square, Loader2, CheckCircle2, AlertCircle,
   Mic, Film, Music, Clapperboard, Download, RefreshCw, ArrowLeft,
-  Zap, XCircle, Wand2, Image, Share2, Save, Edit3, Users,
+  Zap, XCircle, Wand2, Image, Share2, Save, Edit3, Users, MessageSquare,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
