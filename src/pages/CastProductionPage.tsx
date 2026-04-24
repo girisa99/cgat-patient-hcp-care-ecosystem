@@ -83,6 +83,9 @@ import { CharacterEditor, type EditableCharacter } from '@/components/genie-cast
 // Generic publish hub
 import { GenericPublishHub } from '@/components/genie-cast/production/GenericPublishHub';
 
+// Story overview — read-only complete production map (script + visual prompts + transitions)
+import { StoryOverview } from '@/components/genie-cast/production/StoryOverview';
+
 // Project CRUD (for publish status updates)
 import { useCastProjects } from '@/hooks/useCastProjects';
 
