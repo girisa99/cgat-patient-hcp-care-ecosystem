@@ -830,7 +830,7 @@ const handler = async (req: Request): Promise<Response> => {
       success: true, 
       message: `Invite sent to ${to}`, 
       emailSent: true, 
-      emailId: emailResponse.id 
+      emailId: (emailResponse as any)?.data?.id || (emailResponse as any)?.id 
     }), { 
       status: 200, 
       headers: { 'Content-Type': 'application/json', ...corsHeaders } 
