@@ -113,8 +113,8 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    logStep("ERROR: Webhook processing failed", { error: error.message });
-    return new Response(JSON.stringify({ error: error.message }), {
+    logStep("ERROR: Webhook processing failed", { error: (error as Error).message });
+    return new Response(JSON.stringify({ error: (error as Error).message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -242,7 +242,7 @@ async function handleSubscriptionCanceled(
 }
 
 async function handlePaymentSucceeded(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   stripe: Stripe,
   invoice: Stripe.Invoice
 ) {
@@ -264,7 +264,7 @@ async function handlePaymentSucceeded(
 }
 
 async function handlePaymentFailed(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   stripe: Stripe,
   invoice: Stripe.Invoice
 ) {
