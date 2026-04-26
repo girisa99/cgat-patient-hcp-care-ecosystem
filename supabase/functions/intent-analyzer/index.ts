@@ -534,7 +534,7 @@ async function analyzeWithRegionalRouting(description: string, regionCode?: stri
         zone,
       };
     } catch (error) {
-      console.warn(`[intent-analyzer] ❌ ${entry.id} failed:`, error.message);
+      console.warn(`[intent-analyzer] ❌ ${entry.id} failed:`, error instanceof Error ? error.message : String(error));
     }
   }
 
