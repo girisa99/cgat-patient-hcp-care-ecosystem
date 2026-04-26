@@ -67,7 +67,7 @@ async function loadVoiceRoutingFromDB(
     for (const char of data) {
       const vc = (char.voice_config || {}) as Record<string, any>;
       const fallback = vc.fallback || {};
-      dbRouting[char.character_key] = {
+      dbRouting[String(char.character_key)] = {
         provider: vc.provider || char.voice_provider || 'elevenlabs',
         voiceId: vc.voiceId || char.voice_id || '',
         fallbackProvider: fallback.provider || 'alibaba',

@@ -2181,7 +2181,7 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
                   configuredModel: configuredModel, // What was configured
                   usedFallback: usedFallback, // Whether fallback was needed
                   fallbackFrom: usedFallback ? configuredModel : undefined // Original model that failed
-                };
+                } as any;
                 
                 // Track ICD and CPT codes for crosswalk
                 if (key === 'icd_codes' || key === 'icd_code' || key.includes('diagnosis')) {
@@ -4818,7 +4818,7 @@ Use the OCR text above as a reference to validate and enhance your visual extrac
       raw_text: ocrText,
       extraction_method: 'ocr_only'
     };
-    providerUsed = 'google_vision_ocr';
+    providerUsed = 'google_vision_ocr' as any;
   }
   
   return {

@@ -98,7 +98,6 @@ const DRUG_NAME_CORRECTIONS: Record<string, string> = {
   'cephalexan': 'cephalexin',
   'cephalexen': 'cephalexin',
   'doxycyclin': 'doxycycline',
-  'doxycyclin': 'doxycycline',
 };
 
 // Fuzzy match function using Levenshtein distance

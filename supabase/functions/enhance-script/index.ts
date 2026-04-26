@@ -564,8 +564,8 @@ ${scriptContent}`;
           providerName: providerConfig.name,
           data: {
             stats: {
-              wordCount: scriptContent.split(/\s+/).filter(w => w).length,
-              sentenceCount: scriptContent.split(/[.!?]+/).filter(s => s.trim()).length,
+              wordCount: scriptContent.split(/\s+/).filter((w: string) => w).length,
+              sentenceCount: scriptContent.split(/[.!?]+/).filter((s: string) => s.trim()).length,
               readabilityScore: "moderate"
             },
             recommendations: [],
