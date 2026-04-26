@@ -372,8 +372,12 @@ export default function DocumentProcessing() {
       const saved = sessionStorage.getItem('docProcessing_agentFindings');
       if (saved) {
         const parsed = JSON.parse(saved);
-        console.log('[State Restore] Restored agentFindings from sessionStorage:', parsed.length);
-        return parsed;
+        if (Array.isArray(parsed)) {
+          console.log('[State Restore] Restored agentFindings from sessionStorage:', parsed.length);
+          return parsed;
+        }
+        console.warn('[State Restore] agentFindings in sessionStorage is not an array, ignoring');
+        sessionStorage.removeItem('docProcessing_agentFindings');
       }
     } catch (e) {
       console.warn('Failed to restore agent findings from sessionStorage:', e);
@@ -919,6 +923,7 @@ export default function DocumentProcessing() {
 
   // Convert agent findings to SmartDocumentStudio format
   const smartStudioAgentFindings = React.useMemo((): AgentFinding[] => {
+    if (!Array.isArray(agentFindings)) return [];
     return agentFindings.map(f => ({
       agentId: f.agentId,
       agentName: f.agentName,
