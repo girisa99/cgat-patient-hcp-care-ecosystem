@@ -239,7 +239,7 @@ const handler = async (req: Request): Promise<Response> => {
     } else if (isFollowUp) {
       emailSubject = `📬 Follow-up: "${showTitle}" - ${categoryInfo.name || 'Session'}`;
     } else {
-      const subjectParts = [typeInfo.emoji];
+      const subjectParts: string[] = [typeInfo.emoji];
       if (category && categoryInfo.name) {
         subjectParts.push(categoryInfo.name);
       }
