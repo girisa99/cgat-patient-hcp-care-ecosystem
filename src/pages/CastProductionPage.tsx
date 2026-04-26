@@ -1138,12 +1138,22 @@ export default function CastProductionPage() {
             <TabsTrigger value="assembly" disabled={!phaseManager.isPhaseComplete('music')}><Clapperboard className="h-4 w-4 mr-1" /> Assembly</TabsTrigger>
           </TabsList>
 
-          {/* ─── Story Map: read-only overview of script + visual prompts + transitions ─── */}
+          {/* ─── Story Map: interactive script + prompt editor + per-scene generation ─── */}
           <TabsContent value="story">
             <StoryOverview
               scenes={scenes}
               scriptLineData={scriptLineData}
               characters={characters}
+              defaultLanguage={projectLanguage}
+              promptContext={{ industry: projectIndustry, language: projectLanguage }}
+              previews={storyPreviews}
+              busy={storyBusy}
+              onUpdateLine={handleSaveLineEdit}
+              onUpdateStepPrompt={handleUpdateStepPrompt}
+              onUpdateTransitionPrompt={handleUpdateStepPrompt}
+              onGenerateSceneTts={handleGenerateSceneTts}
+              onGenerateSceneVisuals={handleGenerateSceneVisuals}
+              onGenerateSceneAll={handleGenerateSceneAll}
             />
           </TabsContent>
 
