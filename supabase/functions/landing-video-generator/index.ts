@@ -268,7 +268,7 @@ async function generateElevenLabsTTS(text: string, voice: string): Promise<{
   
   const audioBuffer = await response.arrayBuffer();
   return {
-    audioBase64: base64Encode(new Uint8Array(audioBuffer)),
+    audioBase64: base64Encode(new Uint8Array(audioBuffer) as any),
     provider: 'ElevenLabs',
     voice,
     zone: 'West/EU',
@@ -308,7 +308,7 @@ async function generateAzureTTS(text: string, voice: string): Promise<{
   const zone = voice.includes('ar-') ? 'MENA' : voice.includes('hi-') ? 'India/SEA' : 'Other';
   
   return {
-    audioBase64: base64Encode(new Uint8Array(audioBuffer)),
+    audioBase64: base64Encode(new Uint8Array(audioBuffer) as any),
     provider: 'Azure Neural',
     voice,
     zone,

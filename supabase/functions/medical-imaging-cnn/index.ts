@@ -197,13 +197,13 @@ async function runHuggingFaceInference(
         data: imageBlob
       });
       
-      predictions = result.map(pred => ({
+      predictions = result.map((pred: any) => ({
         label: pred.label,
         score: pred.score,
         clinicalRelevance: getClinicalRelevance(pred.label, pred.score, modelKey)
       }));
     } else if (modelInfo.task === 'zero-shot-image-classification' && modelInfo.classes) {
-      const result = await hf.zeroShotImageClassification({
+      const result = await (hf as any).zeroShotImageClassification({
         model: modelInfo.id,
         inputs: {
           image: imageBlob
@@ -213,7 +213,7 @@ async function runHuggingFaceInference(
         }
       });
       
-      predictions = result.map(pred => ({
+      predictions = result.map((pred: any) => ({
         label: pred.label,
         score: pred.score,
         clinicalRelevance: getClinicalRelevance(pred.label, pred.score, modelKey)
@@ -426,7 +426,7 @@ serve(async (req) => {
     console.log(`[MedicalCNN] Running ${modelsToRun.length} models for ${modality}/${organ}: ${modelsToRun.join(', ')}`);
 
     // Run Hugging Face models in parallel
-    const hfPromises = modelsToRun.map(modelKey => 
+    const hfPromises = modelsToRun.map((modelKey: string) => 
       runHuggingFaceInference(hf, modelKey, imageBase64)
     );
 
