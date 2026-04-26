@@ -413,6 +413,36 @@ function extractAllMedications(fields: Record<string, any>): ExtractedMedication
       }
     }
   }
+
+  // Method 1b: Fallback to line_items (used by prescription extraction pipeline)
+  // line_items contains structured rx rows with medication_name/brand_name/sig/etc.
+  if (!medicationsArray) {
+    let lineItemsArray: any[] | null = null;
+    if (Array.isArray(fields.line_items)) {
+      lineItemsArray = fields.line_items;
+    } else if (fields.line_items?.value) {
+      if (Array.isArray(fields.line_items.value)) {
+        lineItemsArray = fields.line_items.value;
+      } else if (typeof fields.line_items.value === 'string') {
+        try {
+          const parsed = JSON.parse(fields.line_items.value);
+          if (Array.isArray(parsed)) {
+            lineItemsArray = parsed;
+            console.log('[extractAllMedications] Parsed line_items from JSON string');
+          }
+        } catch (e) {
+          console.log('[extractAllMedications] Failed to parse line_items JSON string:', e);
+        }
+      }
+    }
+    if (lineItemsArray && lineItemsArray.length > 0) {
+      // Filter to rows that look like medications
+      medicationsArray = lineItemsArray.filter((row: any) =>
+        row && (row.medication_name || row.drug_name || row.name || row.brand_name)
+      );
+      console.log('[extractAllMedications] Using line_items as medication source:', medicationsArray.length);
+    }
+  }
     
   if (medicationsArray) {
     console.log('[extractAllMedications] Processing medications array with', medicationsArray.length, 'items');
