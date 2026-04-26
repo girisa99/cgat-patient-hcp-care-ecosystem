@@ -262,7 +262,7 @@ function convertManifestToFlat(manifest: ManifestPayload): {
 // ─── STEP DISPATCHERS (all receive config, nothing hardcoded) ───────────────
 
 async function dispatchTTS(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   voice: string,
   scriptKey: string,
   scriptContent: Record<string, ScriptEntry>,
@@ -352,7 +352,7 @@ async function dispatchTTS(
 }
 
 async function dispatchAvatar3D(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   character: string,
   style: string,
 ): Promise<SceneStepResult> {
@@ -369,7 +369,7 @@ async function dispatchAvatar3D(
 }
 
 async function dispatchLipsync(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   character: string,
   provider: string,
 ): Promise<SceneStepResult> {
@@ -386,7 +386,7 @@ async function dispatchLipsync(
 }
 
 async function dispatchVideo(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   model: string,
   prompt: string,
   referenceImage?: string,
@@ -405,7 +405,7 @@ async function dispatchVideo(
 }
 
 async function dispatchImage(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   model: string,
   prompt: string,
 ): Promise<SceneStepResult> {
@@ -422,7 +422,7 @@ async function dispatchImage(
 }
 
 async function dispatchScreenCapture(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   screenIds: string[],
   storagePaths: StoragePaths,
 ): Promise<SceneStepResult> {
@@ -437,7 +437,7 @@ async function dispatchScreenCapture(
 }
 
 async function dispatchAIScreenEnhance(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   screenIds: string[],
   scriptContext: string,
   enhanceMode: string,
@@ -467,7 +467,7 @@ async function dispatchAIScreenEnhance(
 }
 
 async function dispatchMusic(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   prompt: string,
   duration: number,
   storagePaths: StoragePaths,
@@ -488,7 +488,7 @@ async function dispatchMusic(
 }
 
 async function dispatchSFX(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   prompt: string,
   duration: number | undefined,
   storagePaths: StoragePaths,
