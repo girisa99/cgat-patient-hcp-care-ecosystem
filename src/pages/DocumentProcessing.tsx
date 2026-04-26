@@ -2568,6 +2568,20 @@ export default function DocumentProcessing() {
         })() : undefined
       };
       
+      // [DOC-DIAG] Checkpoint #1: Extraction complete
+      const medsField = (extractedFields as any)?.medications;
+      console.log('[DOC-DIAG] 🎯 Extraction COMPLETE', {
+        docType: selectedDocType,
+        fieldsCount: Object.keys(extractedFields).length,
+        fieldKeys: Object.keys(extractedFields),
+        medicationsRaw: medsField,
+        medicationsArrayLength: Array.isArray(medsField)
+          ? medsField.length
+          : (Array.isArray(medsField?.value) ? medsField.value.length : 0),
+        medicationsTopLevel: medications?.length ?? 0,
+        modelRouting: finalResult.modelRouting?.pipelineType,
+      });
+      
       // Show verification dialog before saving to history
       setPendingResult(finalResult);
       setShowVerificationDialog(true);
