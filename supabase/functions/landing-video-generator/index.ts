@@ -268,7 +268,7 @@ async function generateElevenLabsTTS(text: string, voice: string): Promise<{
   
   const audioBuffer = await response.arrayBuffer();
   return {
-    audioBase64: base64Encode(new Uint8Array(audioBuffer)),
+    audioBase64: base64Encode(audioBuffer),
     provider: 'ElevenLabs',
     voice,
     zone: 'West/EU',
