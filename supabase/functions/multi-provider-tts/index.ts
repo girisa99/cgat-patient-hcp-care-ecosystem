@@ -843,7 +843,7 @@ async function generateAlibabaTTS(text: string, languageCode?: string, voice?: s
   };
   
   for (const model of qwenModels) {
-    const textChunks = chunkTextByChars(text, modelMaxChars);
+    const textChunks = chunkTextByChars(text, QWEN3_CHUNK_LIMIT);
     
     
     for (const config of configs) {
@@ -1023,7 +1023,7 @@ async function processTTSBackground(
     // Update progress
     await supabase.from('tts_jobs').update({ progress: 10 }).eq('id', jobId);
 
-    let audioBuffer: ArrayBuffer;
+    let audioBuffer: ArrayBuffer = new ArrayBuffer(0);
     let finalProvider = routing.provider;
     let finalZone = routing.zone;
     
@@ -1261,7 +1261,7 @@ serve(async (req) => {
     // ═══════════════════════════════════════════════════════════════════════════════
     // SYNCHRONOUS PROCESSING FOR SHORT CONTENT
     // ═══════════════════════════════════════════════════════════════════════════════
-    let audioBuffer: ArrayBuffer;
+    let audioBuffer: ArrayBuffer = new ArrayBuffer(0);
     
     const generateWithProvider = async (provider: TTSProvider): Promise<ArrayBuffer> => {
       switch (provider) {
