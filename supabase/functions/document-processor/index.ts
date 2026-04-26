@@ -2300,11 +2300,16 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
                   };
                 }
                 if (med.ndc) {
-                  formMapping[`medication_${idx}_ndc`] = {
-                    value: med.ndc,
-                    confidence: med.confidence || 0.85,
-                    source: `${providerUsed}_prescription`
-                  };
+                  // Hallucination guard: only keep NDC if it actually appears in the source text
+                  if (validateIdentifierAgainstSource(med.ndc, sourceTextForValidation, { minLength: 6 })) {
+                    formMapping[`medication_${idx}_ndc`] = {
+                      value: med.ndc,
+                      confidence: med.confidence || 0.85,
+                      source: `${providerUsed}_prescription`
+                    };
+                  } else {
+                    console.warn(`[Extraction] Dropping hallucinated NDC for medication ${idx} ("${med.ndc}") — not present in source text. Use Drug Lookup to fetch a verified NDC.`);
+                  }
                 }
                 if (med.is_controlled) {
                   formMapping[`medication_${idx}_controlled`] = {
