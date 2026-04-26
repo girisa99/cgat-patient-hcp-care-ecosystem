@@ -305,7 +305,7 @@ async function generateInstances(
   };
 }
 
-function calculateNextOccurrence(recurrence: NonNullable<RecurringScheduleRequest['config']>['recurrence']): string {
+function calculateNextOccurrence(recurrence: RecurringScheduleRequest['config']['recurrence']): string {
   if (!recurrence) return new Date().toISOString();
 
   const now = new Date();

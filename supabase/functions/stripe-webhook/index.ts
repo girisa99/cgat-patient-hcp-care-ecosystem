@@ -68,7 +68,7 @@ serve(async (req) => {
     try {
       event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
     } catch (err) {
-      logStep("ERROR: Signature verification failed", { error: err instanceof Error ? err.message : String(err) });
+      logStep("ERROR: Signature verification failed", { error: err.message });
       return new Response(JSON.stringify({ error: "Invalid signature" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -113,9 +113,8 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    const errMsg = error instanceof Error ? error.message : String(error);
-    logStep("ERROR: Webhook processing failed", { error: errMsg });
-    return new Response(JSON.stringify({ error: errMsg }), {
+    logStep("ERROR: Webhook processing failed", { error: error.message });
+    return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -123,7 +122,7 @@ serve(async (req) => {
 });
 
 async function handleSubscriptionChange(
-  supabase: any,
+  supabase: ReturnType<typeof createClient>,
   stripe: Stripe,
   subscription: Stripe.Subscription
 ) {
@@ -209,7 +208,7 @@ async function handleSubscriptionChange(
 }
 
 async function handleSubscriptionCanceled(
-  supabase: any,
+  supabase: ReturnType<typeof createClient>,
   stripe: Stripe,
   subscription: Stripe.Subscription
 ) {
@@ -243,7 +242,7 @@ async function handleSubscriptionCanceled(
 }
 
 async function handlePaymentSucceeded(
-  supabase: any,
+  supabase: ReturnType<typeof createClient>,
   stripe: Stripe,
   invoice: Stripe.Invoice
 ) {
@@ -265,7 +264,7 @@ async function handlePaymentSucceeded(
 }
 
 async function handlePaymentFailed(
-  supabase: any,
+  supabase: ReturnType<typeof createClient>,
   stripe: Stripe,
   invoice: Stripe.Invoice
 ) {

@@ -62,7 +62,7 @@ serve(async (req) => {
       }
 
       const buffer = await response.arrayBuffer();
-      const base64Audio = base64Encode(new Uint8Array(buffer) as any);
+      const base64Audio = base64Encode(new Uint8Array(buffer));
       
       console.log(`Chunk ${chunkIndex + 1} completed, audio size: ${buffer.byteLength} bytes`);
 
@@ -106,7 +106,7 @@ serve(async (req) => {
       }
 
       const buffer = await response.arrayBuffer();
-      const base64Audio = base64Encode(new Uint8Array(buffer) as any);
+      const base64Audio = base64Encode(new Uint8Array(buffer));
       
       console.log(`Audio generated, size: ${buffer.byteLength} bytes`);
 
@@ -172,7 +172,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in openai-tts function:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
+      JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

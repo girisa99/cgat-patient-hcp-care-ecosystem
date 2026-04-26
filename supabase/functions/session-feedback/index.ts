@@ -273,7 +273,7 @@ const handler = async (req: Request): Promise<Response> => {
                   from: 'Genie Suite <noreply@resend.dev>',
                   to: [p.email],
                   subject: `Status Update: "${session.title}"`,
-                  html: generateStatusUpdateEmail(session, p, body.review_field || '', body.status || ''),
+                  html: generateStatusUpdateEmail(session, p, body.review_field, body.status),
                 });
               } catch (e) {
                 console.error('Status notification failed:', e);
