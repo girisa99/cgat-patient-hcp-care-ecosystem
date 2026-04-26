@@ -212,7 +212,7 @@ const handler = async (req: Request): Promise<Response> => {
       `DESCRIPTION:${calendarDetails.replace(/,/g, '\\,').replace(/;/g, '\\;').replace(/\n/g, '\\n')}`,
       joinUrl ? `LOCATION:${joinUrl.replace(/,/g, '\\,').replace(/;/g, '\\;')}` : '',
       joinUrl ? `URL:${joinUrl}` : '',
-      `ORGANIZER;CN=${hostName.replace(/,/g, '').replace(/;/g, '')}:mailto:${hostEmail || fromEmail}`,
+      `ORGANIZER;CN=${(hostName || 'Host').replace(/,/g, '').replace(/;/g, '')}:mailto:${hostEmail || fromEmail}`,
       'BEGIN:VALARM',
       'ACTION:DISPLAY',
       'DESCRIPTION:Genie Suite - Your session is now active! Join 30 minutes early.',
