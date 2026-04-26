@@ -43,7 +43,7 @@ let VOICE_ROUTING = { ...VOICE_ROUTING_FALLBACK };
  * Falls back to hardcoded map if no project_id or no DB data.
  */
 async function loadVoiceRoutingFromDB(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   projectId?: string,
 ): Promise<void> {
   if (!projectId) {
@@ -92,7 +92,7 @@ async function loadVoiceRoutingFromDB(
  * Returns a pipeline map keyed by scene_key, or null if no DB data.
  */
 async function loadScenePipelinesFromDB(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   projectId?: string,
 ): Promise<Record<string, any[]> | null> {
   if (!projectId) return null;
@@ -154,7 +154,7 @@ interface OrchestratorResult {
 // ─── STEP DISPATCHERS ───────────────────────────────────────────────────────
 
 async function dispatchTTS(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   voice: string,
   scriptKey: string,
   scriptContent: Record<string, { text: string }>,
@@ -238,7 +238,7 @@ async function dispatchTTS(
 }
 
 async function dispatchAvatar3D(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   character: string,
   style: string,
 ): Promise<SceneStepResult> {
@@ -269,7 +269,7 @@ async function dispatchAvatar3D(
 }
 
 async function dispatchLipsync(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   character: string,
   provider: string,
 ): Promise<SceneStepResult> {
@@ -299,7 +299,7 @@ async function dispatchLipsync(
 }
 
 async function dispatchAlibabaVideo(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   model: string,
   prompt: string,
   referenceImage?: string,
@@ -332,7 +332,7 @@ async function dispatchAlibabaVideo(
 }
 
 async function dispatchAlibabaImage(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   model: string,
   prompt: string,
 ): Promise<SceneStepResult> {
@@ -361,7 +361,7 @@ async function dispatchAlibabaImage(
 }
 
 async function dispatchScreenCapture(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   screenIds: string[],
 ): Promise<SceneStepResult> {
   console.log(`  📸 Screen capture: [${screenIds.join(', ')}]`);
@@ -384,7 +384,7 @@ async function dispatchScreenCapture(
 }
 
 async function dispatchAIScreenEnhance(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   screenIds: string[],
   scriptContext: string,
   enhanceMode: string,
@@ -428,7 +428,7 @@ async function dispatchAIScreenEnhance(
 }
 
 async function dispatchMusic(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   prompt: string,
   duration: number,
 ): Promise<SceneStepResult> {
@@ -455,7 +455,7 @@ async function dispatchMusic(
 }
 
 async function dispatchSFX(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   prompt: string,
   duration?: number,
 ): Promise<SceneStepResult> {
@@ -483,7 +483,7 @@ async function dispatchSFX(
 // ─── HELPERS ────────────────────────────────────────────────────────────────
 
 async function uploadBase64Audio(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   base64Content: string,
   pathPrefix: string,
 ): Promise<string> {
