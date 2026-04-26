@@ -511,7 +511,7 @@ async function dispatchSFX(
 // ─── HELPERS ────────────────────────────────────────────────────────────────
 
 async function uploadBase64Audio(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   base64Content: string,
   pathPrefix: string,
   bucket: string,
