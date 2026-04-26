@@ -179,6 +179,7 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  let castProjectId: string | null = null;
   try {
     const { 
       language = 'en', 
