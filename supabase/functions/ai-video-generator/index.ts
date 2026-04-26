@@ -1743,6 +1743,7 @@ async function generateAvatarWithAlibaba(request: AvatarRequest, fullBody = fals
   audioUrl?: string;
   provider: string;
   model: string;
+  alibabaTaskId?: string;
 }> {
   // wan2.2-s2v (lip-sync) ONLY exists on the China endpoint.
   // OmniAvatar also requires China. Always prefer China key for avatar generation.
