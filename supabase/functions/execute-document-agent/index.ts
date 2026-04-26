@@ -793,13 +793,23 @@ async function executeDrugLookup(context: DocumentContext): Promise<AgentFinding
   if (medicationsArray) {
     console.log('[drug-lookup] Processing medications array with', medicationsArray.length, 'items');
     medicationsArray.forEach((med: any) => {
-      const medName = med.medication_name || med.name || med.drug_name;
+      const brand = med.brand_name || med.brandName;
+      const generic = med.generic_name || med.genericName;
+      const primary =
+        med.medication_name || med.medicationName ||
+        med.drug_name || med.drugName ||
+        brand || generic ||
+        med.product_name || med.productName ||
+        med.name || med.drug || med.medication || med.rx;
+      const medName = brand && generic && brand.toLowerCase().trim() !== generic.toLowerCase().trim()
+        ? `${brand} (${generic})`
+        : primary;
       if (medName) {
         medications.push({
           name: medName,
           strength: med.strength || med.dosage || med.form,
-          sig: med.sig || med.directions,
-          ndc: med.ndc
+          sig: med.sig || med.directions || med.sig_text,
+          ndc: med.ndc || med.ndc_code
         });
       }
     });
