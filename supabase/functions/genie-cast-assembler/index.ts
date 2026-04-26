@@ -179,7 +179,7 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  let outerCastProjectId: string | null = null;
+  let castProjectId: string | null = null;
   try {
     const { 
       language = 'en', 
