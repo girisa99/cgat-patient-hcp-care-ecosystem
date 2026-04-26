@@ -357,6 +357,118 @@ export default function CastProductionPage() {
     toast.success('Line updated');
   }, [scriptLines]);
 
+  // ─── Story Map: persist pipeline step prompt edits to scene_config.pipeline[i].prompt ───
+  const handleUpdateStepPrompt = useCallback(async (
+    sceneKey: string,
+    stepIndex: number,
+    newPrompt: string,
+  ) => {
+    const scene = scenes.find(s => s.scene_key === sceneKey);
+    if (!scene) return;
+    const config = { ...(scene.scene_config || {}) } as Record<string, any>;
+    const pipeline = Array.isArray(config.pipeline) ? [...config.pipeline] : [];
+    if (!pipeline[stepIndex]) {
+      toast.error('Step not found');
+      return;
+    }
+    pipeline[stepIndex] = { ...pipeline[stepIndex], prompt: newPrompt };
+    config.pipeline = pipeline;
+    const untypedSb = supabase as any;
+    const { error } = await untypedSb
+      .from('cast_project_scenes')
+      .update({ scene_config: config })
+      .eq('id', scene.id);
+    if (error) {
+      toast.error(`Failed to save prompt: ${error.message}`);
+      return;
+    }
+    setScenes(prev => prev.map(s => s.id === scene.id ? { ...s, scene_config: config } : s));
+    toast.success('Prompt updated');
+  }, [scenes]);
+
+  // ─── Per-scene generation busy state (for Story Map action buttons) ───
+  const [sceneTtsBusy, setSceneTtsBusy] = useState<Record<string, boolean>>({});
+  const [sceneVisualBusy, setSceneVisualBusy] = useState<Record<string, boolean>>({});
+
+  // Per-scene TTS — generate every line in this scene sequentially
+  const handleGenerateSceneTts = useCallback(async (sceneKey: string) => {
+    const sceneLines = scriptLineData.filter(l => l.sceneKey === sceneKey);
+    if (sceneLines.length === 0) {
+      toast.info('No lines in this scene');
+      return;
+    }
+    if (!(await checkConcurrency())) return;
+    await validateVoices();
+    setSceneTtsBusy(prev => ({ ...prev, [sceneKey]: true }));
+    try {
+      let ok = 0;
+      for (const line of sceneLines) {
+        const success = await tts.generateLine(line.key);
+        if (success) ok++;
+      }
+      toast.success(`Scene TTS: ${ok}/${sceneLines.length} lines generated`);
+    } finally {
+      setSceneTtsBusy(prev => ({ ...prev, [sceneKey]: false }));
+    }
+  }, [scriptLineData, checkConcurrency, validateVoices, tts]);
+
+  // Per-scene visuals — run only this scene's pipeline
+  const handleGenerateSceneVisuals = useCallback(async (sceneKey: string) => {
+    const scene = scenes.find(s => s.scene_key === sceneKey);
+    if (!scene) return;
+    if (!(await checkConcurrency())) return;
+    const config: VisualGenerationConfig = {
+      sceneKey: scene.scene_key,
+      sceneTitle: scene.title,
+      pipeline: (scene.scene_config?.pipeline as any[]) || [],
+      backgroundUrl: scene.scene_config?.backgroundUrl as string | undefined,
+    };
+    setSceneVisualBusy(prev => ({ ...prev, [sceneKey]: true }));
+    try {
+      await visual.startSceneVisualProduction(config, tts.audioMap, true);
+      toast.success(`Scene "${scene.title}" visuals queued`);
+    } catch (err: any) {
+      toast.error(`Visual generation failed: ${err.message || err}`);
+    } finally {
+      setSceneVisualBusy(prev => ({ ...prev, [sceneKey]: false }));
+    }
+  }, [scenes, checkConcurrency, visual, tts.audioMap]);
+
+  // Per-scene full pipeline — TTS first, then visuals (audio is needed for lipsync)
+  const handleGenerateSceneAll = useCallback(async (sceneKey: string) => {
+    await handleGenerateSceneTts(sceneKey);
+    await handleGenerateSceneVisuals(sceneKey);
+  }, [handleGenerateSceneTts, handleGenerateSceneVisuals]);
+
+  // Build inline previews from generated audio + visual artifacts
+  const storyPreviews = useMemo(() => {
+    const audioByLineKey: Record<string, string> = {};
+    for (const [k, v] of Object.entries(tts.audioMap)) {
+      if (v?.audioUrl) audioByLineKey[k] = v.audioUrl;
+    }
+    const visualsBySceneKey: Record<string, Array<{ url: string; label: string; kind: 'image' | 'video' }>> = {};
+    for (const [sceneKey, prod] of Object.entries(visual.sceneProduction || {})) {
+      const items: Array<{ url: string; label: string; kind: 'image' | 'video' }> = [];
+      const push = (rec: Record<string, string> | undefined, kind: 'image' | 'video', prefix: string) => {
+        if (!rec) return;
+        for (const [stepKey, url] of Object.entries(rec)) {
+          if (url) items.push({ url, label: `${prefix} · ${stepKey}`, kind });
+        }
+      };
+      push((prod as any).videoUrls, 'video', 'Video');
+      push((prod as any).lipsyncUrls, 'video', 'Lipsync');
+      push((prod as any).imageUrls, 'image', 'Image');
+      push((prod as any).avatarUrls, 'image', 'Avatar');
+      if (items.length) visualsBySceneKey[sceneKey] = items;
+    }
+    return { audioByLineKey, visualsBySceneKey };
+  }, [tts.audioMap, visual.sceneProduction]);
+
+  const storyBusy = useMemo(() => ({
+    ttsBySceneKey: sceneTtsBusy,
+    visualsBySceneKey: sceneVisualBusy,
+  }), [sceneTtsBusy, sceneVisualBusy]);
+
   // Restore TTS from DB on load
   useEffect(() => {
     if (projectId && scriptLineData.length > 0) {
@@ -1026,12 +1138,22 @@ export default function CastProductionPage() {
             <TabsTrigger value="assembly" disabled={!phaseManager.isPhaseComplete('music')}><Clapperboard className="h-4 w-4 mr-1" /> Assembly</TabsTrigger>
           </TabsList>
 
-          {/* ─── Story Map: read-only overview of script + visual prompts + transitions ─── */}
+          {/* ─── Story Map: interactive script + prompt editor + per-scene generation ─── */}
           <TabsContent value="story">
             <StoryOverview
               scenes={scenes}
               scriptLineData={scriptLineData}
               characters={characters}
+              defaultLanguage={projectLanguage}
+              promptContext={{ industry: projectIndustry }}
+              previews={storyPreviews}
+              busy={storyBusy}
+              onUpdateLine={handleSaveLineEdit}
+              onUpdateStepPrompt={handleUpdateStepPrompt}
+              onUpdateTransitionPrompt={handleUpdateStepPrompt}
+              onGenerateSceneTts={handleGenerateSceneTts}
+              onGenerateSceneVisuals={handleGenerateSceneVisuals}
+              onGenerateSceneAll={handleGenerateSceneAll}
             />
           </TabsContent>
 
