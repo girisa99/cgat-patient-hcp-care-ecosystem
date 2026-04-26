@@ -209,14 +209,14 @@ function encodeBase64Chunked(buffer: ArrayBuffer, chunkSize = 1024 * 1024): stri
   const totalSize = bytes.length;
   
   if (totalSize < chunkSize) {
-    return base64Encode(bytes);
+    return base64Encode(bytes as any);
   }
   
   // For large buffers, encode in chunks to avoid memory issues
   const chunks: string[] = [];
   for (let i = 0; i < totalSize; i += chunkSize) {
     const slice = bytes.slice(i, Math.min(i + chunkSize, totalSize));
-    chunks.push(base64Encode(slice));
+    chunks.push(base64Encode(slice as any));
   }
   
   console.log(`📦 Encoded ${totalSize} bytes in ${chunks.length} chunks`);
@@ -843,7 +843,7 @@ async function generateAlibabaTTS(text: string, languageCode?: string, voice?: s
   };
   
   for (const model of qwenModels) {
-    const textChunks = chunkTextByChars(text, modelMaxChars);
+    const textChunks = chunkTextByChars(text, QWEN3_CHUNK_LIMIT);
     
     
     for (const config of configs) {
@@ -1023,7 +1023,7 @@ async function processTTSBackground(
     // Update progress
     await supabase.from('tts_jobs').update({ progress: 10 }).eq('id', jobId);
 
-    let audioBuffer: ArrayBuffer;
+    let audioBuffer: ArrayBuffer = new ArrayBuffer(0);
     let finalProvider = routing.provider;
     let finalZone = routing.zone;
     
