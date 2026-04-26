@@ -205,18 +205,18 @@ function chunkTextByBytes(text: string, maxBytes: number): string[] {
  * Encodes chunk by chunk to avoid memory spikes
  */
 function encodeBase64Chunked(buffer: ArrayBuffer, chunkSize = 1024 * 1024): string {
-  const bytes = new Uint8Array(buffer);
-  const totalSize = bytes.length;
+  const totalSize = buffer.byteLength;
   
   if (totalSize < chunkSize) {
-    return base64Encode(bytes);
+    return base64Encode(buffer);
   }
   
   // For large buffers, encode in chunks to avoid memory issues
   const chunks: string[] = [];
+  const bytes = new Uint8Array(buffer);
   for (let i = 0; i < totalSize; i += chunkSize) {
     const slice = bytes.slice(i, Math.min(i + chunkSize, totalSize));
-    chunks.push(base64Encode(slice));
+    chunks.push(base64Encode(slice.buffer.slice(slice.byteOffset, slice.byteOffset + slice.byteLength)));
   }
   
   console.log(`📦 Encoded ${totalSize} bytes in ${chunks.length} chunks`);
