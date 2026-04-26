@@ -6,7 +6,7 @@
  * Integrated with AgentSetupWizard for configuring needs-config agents
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -987,7 +987,7 @@ export default function SubAgentRecommendationDialog({
   }, [documentType.id, customAgents]);
 
   // [DOC-DIAG] Checkpoint #3: Dialog opened + suggestions resolved
-  React.useEffect(() => {
+  useEffect(() => {
     if (!open) return;
     const readyAgents = suggestions.filter(s => s.readyStatus === 'ready' || s.readyStatus === 'ai-powered');
     const ed: any = extractedData || {};
