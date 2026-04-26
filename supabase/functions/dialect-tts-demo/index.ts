@@ -645,7 +645,7 @@ serve(async (req) => {
         );
       }
       
-      const base64Audio = base64Encode(new Uint8Array(result.buffer) as any);
+      const base64Audio = base64Encode(result.buffer);
       return new Response(
         JSON.stringify({ 
           audioContent: base64Audio, 
@@ -709,7 +709,7 @@ serve(async (req) => {
         );
       }
 
-      const base64Audio = base64Encode(new Uint8Array(audioBuffer) as any);
+      const base64Audio = base64Encode(audioBuffer);
       return new Response(
         JSON.stringify({ audioContent: base64Audio, provider, languageCode }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

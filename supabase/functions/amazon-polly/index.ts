@@ -204,7 +204,7 @@ serve(async (req) => {
 
     // Get audio data
     const audioBuffer = await response.arrayBuffer();
-    const audioBase64 = base64Encode(new Uint8Array(audioBuffer) as any);
+    const audioBase64 = base64Encode(audioBuffer);
 
     console.log(`[Amazon Polly] Generated ${audioBuffer.byteLength} bytes of audio`);
 
