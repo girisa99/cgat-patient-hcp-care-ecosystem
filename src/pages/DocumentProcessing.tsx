@@ -2568,6 +2568,20 @@ export default function DocumentProcessing() {
         })() : undefined
       };
       
+      // [DOC-DIAG] Checkpoint #1: Extraction complete
+      const medsField = (extractedFields as any)?.medications;
+      console.log('[DOC-DIAG] 🎯 Extraction COMPLETE', {
+        docType: selectedDocType,
+        fieldsCount: Object.keys(extractedFields).length,
+        fieldKeys: Object.keys(extractedFields),
+        medicationsRaw: medsField,
+        medicationsArrayLength: Array.isArray(medsField)
+          ? medsField.length
+          : (Array.isArray(medsField?.value) ? medsField.value.length : 0),
+        medicationsTopLevel: medications?.length ?? 0,
+        modelRouting: finalResult.modelRouting?.pipelineType,
+      });
+      
       // Show verification dialog before saving to history
       setPendingResult(finalResult);
       setShowVerificationDialog(true);
@@ -3342,6 +3356,15 @@ export default function DocumentProcessing() {
         setActiveTab('patient-info');
       }
       
+      // [DOC-DIAG] Checkpoint #2: Save complete -> opening sub-agent dialog
+      console.log('[DOC-DIAG] ✅ Save complete, opening SubAgentRecommendationDialog', {
+        docType: selectedDocType,
+        hasProcessingResult: !!processingResult,
+        extractedFieldsKeys: processingResult ? Object.keys(processingResult.extractedFields || {}) : [],
+        medicationsCount: Array.isArray((processingResult?.extractedFields as any)?.medications)
+          ? (processingResult?.extractedFields as any).medications.length
+          : ((processingResult?.extractedFields as any)?.medications?.value?.length ?? 'n/a'),
+      });
       // Show sub-agent dialog after successful save (user has verified fields)
       setShowSubAgentDialog(true);
     } catch (err) {
