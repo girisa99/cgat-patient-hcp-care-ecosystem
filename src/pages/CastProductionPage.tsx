@@ -1145,7 +1145,7 @@ export default function CastProductionPage() {
               scriptLineData={scriptLineData}
               characters={characters}
               defaultLanguage={projectLanguage}
-              promptContext={{ industry: projectIndustry, language: projectLanguage }}
+              promptContext={{ industry: projectIndustry }}
               previews={storyPreviews}
               busy={storyBusy}
               onUpdateLine={handleSaveLineEdit}
