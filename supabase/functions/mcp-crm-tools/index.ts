@@ -404,7 +404,7 @@ serve(async (req) => {
         jsonrpc: '2.0',
         error: {
           code: -32000,
-          message: error.message
+          message: (error as Error)?.message ?? 'Internal error'
         }
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

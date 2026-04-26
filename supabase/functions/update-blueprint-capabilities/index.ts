@@ -445,7 +445,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error updating blueprints:", error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({ success: false, error: (error as Error)?.message ?? 'Internal error' }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
