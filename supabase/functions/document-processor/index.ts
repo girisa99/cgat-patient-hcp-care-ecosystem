@@ -4183,7 +4183,7 @@ async function extractWithGemini(imageBase64: string, contentType: string, promp
     }
     
     // Strategy 2: Extract JSON from markdown code blocks ```json ... ```
-    let jsonStr: string | null = null;
+    let jsonStr: string = '';
     
     if (responseText.includes('```json')) {
       const startMarker = responseText.indexOf('```json');
