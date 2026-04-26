@@ -8,6 +8,32 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// ============================================================================
+// HALLUCINATION GUARDS
+// ============================================================================
+// AI extractors can fabricate identifier-style fields (NDC, NPI, DEA) that
+// look plausible but are not actually present in the source document.
+// `validateIdentifierAgainstSource` returns true only when the identifier
+// (digits/letters, ignoring whitespace and dashes) appears in the OCR/raw
+// text. Use this for any field that must trace back to the document.
+function normalizeIdentifierForCompare(value: unknown): string {
+  if (value === null || value === undefined) return '';
+  return String(value).replace(/[\s\-_.]/g, '').toLowerCase();
+}
+
+function validateIdentifierAgainstSource(
+  identifier: unknown,
+  sourceText: string | undefined | null,
+  options: { minLength?: number } = {}
+): boolean {
+  const minLength = options.minLength ?? 4;
+  const id = normalizeIdentifierForCompare(identifier);
+  if (!id || id.length < minLength) return false;
+  const src = normalizeIdentifierForCompare(sourceText || '');
+  if (!src) return false;
+  return src.includes(id);
+}
+
 // Standard medical reference ranges
 const MEDICAL_REFERENCE_RANGES = {
   brain: {
@@ -2202,6 +2228,12 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
             // NEVER emit standalone medication fields - only the array items
             // ============================================
             const medicationsArray = extracted.medications || extracted.fields?.medications;
+            // Source text for hallucination validation (NDC, NPI, DEA, etc.)
+            const sourceTextForValidation = [
+              ocrTextExtracted || '',
+              (extracted as any)?.raw_text || '',
+              (extracted as any)?.fields?.raw_text || ''
+            ].join('\n');
             if (medicationsArray && Array.isArray(medicationsArray) && medicationsArray.length > 0) {
               console.log(`[Extraction] Found medications array with ${medicationsArray.length} items - normalizing to clean format`);
               
@@ -2268,11 +2300,16 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
                   };
                 }
                 if (med.ndc) {
-                  formMapping[`medication_${idx}_ndc`] = {
-                    value: med.ndc,
-                    confidence: med.confidence || 0.85,
-                    source: `${providerUsed}_prescription`
-                  };
+                  // Hallucination guard: only keep NDC if it actually appears in the source text
+                  if (validateIdentifierAgainstSource(med.ndc, sourceTextForValidation, { minLength: 6 })) {
+                    formMapping[`medication_${idx}_ndc`] = {
+                      value: med.ndc,
+                      confidence: med.confidence || 0.85,
+                      source: `${providerUsed}_prescription`
+                    };
+                  } else {
+                    console.warn(`[Extraction] Dropping hallucinated NDC for medication ${idx} ("${med.ndc}") — not present in source text. Use Drug Lookup to fetch a verified NDC.`);
+                  }
                 }
                 if (med.is_controlled) {
                   formMapping[`medication_${idx}_controlled`] = {
