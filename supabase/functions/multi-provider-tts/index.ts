@@ -213,10 +213,9 @@ function encodeBase64Chunked(buffer: ArrayBuffer, chunkSize = 1024 * 1024): stri
   
   // For large buffers, encode in chunks to avoid memory issues
   const chunks: string[] = [];
-  const bytes = new Uint8Array(buffer);
   for (let i = 0; i < totalSize; i += chunkSize) {
-    const slice = bytes.slice(i, Math.min(i + chunkSize, totalSize));
-    chunks.push(base64Encode(slice.buffer.slice(slice.byteOffset, slice.byteOffset + slice.byteLength)));
+    const slice = buffer.slice(i, Math.min(i + chunkSize, totalSize));
+    chunks.push(base64Encode(slice));
   }
   
   console.log(`📦 Encoded ${totalSize} bytes in ${chunks.length} chunks`);

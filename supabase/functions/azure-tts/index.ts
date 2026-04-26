@@ -160,7 +160,7 @@ serve(async (req) => {
 
     // Get audio data
     const audioBuffer = await response.arrayBuffer();
-    const audioBase64 = base64Encode(audioBuffer);
+    const audioBase64 = base64Encode(new Uint8Array(audioBuffer) as any);
 
     console.log(`[Azure TTS] Generated ${audioBuffer.byteLength} bytes of audio`);
 

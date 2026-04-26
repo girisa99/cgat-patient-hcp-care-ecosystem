@@ -212,7 +212,7 @@ const handler = async (req: Request): Promise<Response> => {
       `DESCRIPTION:${calendarDetails.replace(/,/g, '\\,').replace(/;/g, '\\;').replace(/\n/g, '\\n')}`,
       joinUrl ? `LOCATION:${joinUrl.replace(/,/g, '\\,').replace(/;/g, '\\;')}` : '',
       joinUrl ? `URL:${joinUrl}` : '',
-      `ORGANIZER;CN=${hostName.replace(/,/g, '').replace(/;/g, '')}:mailto:${hostEmail || fromEmail}`,
+      `ORGANIZER;CN=${(hostName || 'Host').replace(/,/g, '').replace(/;/g, '')}:mailto:${hostEmail || fromEmail}`,
       'BEGIN:VALARM',
       'ACTION:DISPLAY',
       'DESCRIPTION:Genie Suite - Your session is now active! Join 30 minutes early.',
@@ -239,7 +239,7 @@ const handler = async (req: Request): Promise<Response> => {
     } else if (isFollowUp) {
       emailSubject = `📬 Follow-up: "${showTitle}" - ${categoryInfo.name || 'Session'}`;
     } else {
-      const subjectParts = [typeInfo.emoji];
+      const subjectParts: string[] = [typeInfo.emoji];
       if (category && categoryInfo.name) {
         subjectParts.push(categoryInfo.name);
       }
@@ -830,7 +830,7 @@ const handler = async (req: Request): Promise<Response> => {
       success: true, 
       message: `Invite sent to ${to}`, 
       emailSent: true, 
-      emailId: emailResponse.id 
+      emailId: (emailResponse as any).id ?? (emailResponse as any).data?.id 
     }), { 
       status: 200, 
       headers: { 'Content-Type': 'application/json', ...corsHeaders } 

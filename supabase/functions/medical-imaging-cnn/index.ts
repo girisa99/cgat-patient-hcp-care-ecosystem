@@ -426,7 +426,7 @@ serve(async (req) => {
     console.log(`[MedicalCNN] Running ${modelsToRun.length} models for ${modality}/${organ}: ${modelsToRun.join(', ')}`);
 
     // Run Hugging Face models in parallel
-    const hfPromises = modelsToRun.map((modelKey: any) => 
+    const hfPromises = modelsToRun.map((modelKey: string) => 
       runHuggingFaceInference(hf, modelKey, imageBase64)
     );
 
