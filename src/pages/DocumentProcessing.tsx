@@ -923,6 +923,7 @@ export default function DocumentProcessing() {
 
   // Convert agent findings to SmartDocumentStudio format
   const smartStudioAgentFindings = React.useMemo((): AgentFinding[] => {
+    if (!Array.isArray(agentFindings)) return [];
     return agentFindings.map(f => ({
       agentId: f.agentId,
       agentName: f.agentName,
