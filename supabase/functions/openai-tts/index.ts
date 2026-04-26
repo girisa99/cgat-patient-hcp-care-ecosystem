@@ -62,7 +62,7 @@ serve(async (req) => {
       }
 
       const buffer = await response.arrayBuffer();
-      const base64Audio = base64Encode(new Uint8Array(buffer));
+      const base64Audio = base64Encode(buffer);
       
       console.log(`Chunk ${chunkIndex + 1} completed, audio size: ${buffer.byteLength} bytes`);
 
@@ -106,7 +106,7 @@ serve(async (req) => {
       }
 
       const buffer = await response.arrayBuffer();
-      const base64Audio = base64Encode(new Uint8Array(buffer));
+      const base64Audio = base64Encode(buffer);
       
       console.log(`Audio generated, size: ${buffer.byteLength} bytes`);
 
