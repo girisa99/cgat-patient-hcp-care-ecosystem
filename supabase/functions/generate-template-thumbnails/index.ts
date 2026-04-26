@@ -517,7 +517,7 @@ Visual elements: Modern, clean, professional, suitable for video platform thumbn
   }
   
   // If base64, upload to storage
-  let finalUrl = result.url;
+  let finalUrl: string | null = result.url;
   if (result.url.startsWith('data:')) {
     const filename = `${blueprint.id}-${Date.now()}.png`;
     finalUrl = await uploadToStorage(supabase, result.url, filename);

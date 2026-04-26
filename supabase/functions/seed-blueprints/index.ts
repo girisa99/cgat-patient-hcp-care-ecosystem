@@ -276,7 +276,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error seeding blueprints:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: (error as Error)?.message ?? 'Internal error' }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

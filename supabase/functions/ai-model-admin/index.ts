@@ -192,7 +192,7 @@ Deno.serve(async (req: Request) => {
     }
   } catch (err) {
     console.error('[ai-model-admin] Error:', err);
-    return json(getCorsHeaders(req), 500, { error: err.message ?? 'Internal error' });
+    return json(getCorsHeaders(req), 500, { error: (err as Error)?.message ?? 'Internal error' });
   }
 });
 
