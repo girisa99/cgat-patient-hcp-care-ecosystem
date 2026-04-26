@@ -738,7 +738,7 @@ serve(async (req) => {
   } catch (err) {
     console.error('❌ EP04 Orchestrator error:', err);
     return new Response(
-      JSON.stringify({ success: false, error: err instanceof Error ? err.message : String(err), scenes: [], totalDuration: 0, assetsGenerated: 0, errors: [err.message] }),
+      JSON.stringify({ success: false, error: err instanceof Error ? err.message : String(err), scenes: [], totalDuration: 0, assetsGenerated: 0, errors: [err instanceof Error ? err.message : String(err)] }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   }
