@@ -516,7 +516,7 @@ serve(async (req) => {
         message: assemblyResult.pendingGeneration
           ? 'Assembly submitted to RunPod FFmpeg. Poll genie-cast-status for completion.'
           : 'Video assembly completed.',
-        chapters: preBuiltChapters.map(c => ({ id: c.chapterId, product: c.product, success: c.success })),
+        chapters: preBuiltChapters.map((c: any) => ({ id: c.chapterId, product: c.product, success: c.success })),
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
