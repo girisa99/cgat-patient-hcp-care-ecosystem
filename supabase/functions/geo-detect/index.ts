@@ -164,7 +164,7 @@ serve(async (req) => {
 });
 
 async function returnRegionData(
-  supabaseClient: ReturnType<typeof createClient>,
+  supabaseClient: any,
   regionCode: string,
   corsHeaders: Record<string, string>,
   detectedCountry?: string | null
