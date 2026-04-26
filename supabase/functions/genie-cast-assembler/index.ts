@@ -179,6 +179,7 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  let castProjectId: string | null = null;
   try {
     const { 
       language = 'en', 
@@ -453,8 +454,8 @@ serve(async (req) => {
         } catch (_) { /* best-effort */ }
       }
 
-      const sceneDuration = preBuiltChapters.reduce((sum, c) => sum + c.duration, 0);
-      const transitionDuration = (transitions || []).reduce((sum, t) => sum + t.duration, 0);
+      const sceneDuration = preBuiltChapters.reduce((sum: number, c: any) => sum + c.duration, 0);
+      const transitionDuration = (transitions || []).reduce((sum: number, t: any) => sum + t.duration, 0);
       const bookendDuration = (bookends?.opening.duration || 0) + (bookends?.closing.duration || 0);
       const totalDuration = sceneDuration + transitionDuration + bookendDuration;
 
@@ -515,7 +516,7 @@ serve(async (req) => {
         message: assemblyResult.pendingGeneration
           ? 'Assembly submitted to RunPod FFmpeg. Poll genie-cast-status for completion.'
           : 'Video assembly completed.',
-        chapters: preBuiltChapters.map(c => ({ id: c.chapterId, product: c.product, success: c.success })),
+        chapters: preBuiltChapters.map((c: any) => ({ id: c.chapterId, product: c.product, success: c.success })),
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -954,7 +955,7 @@ serve(async (req) => {
           output_url: result.videoUrl || null,
           output_thumbnail_url: result.thumbnailUrl || null,
           output_duration_seconds: totalDuration || null,
-          provider_job_id: assemblyResult.renderProjectId || null,
+          provider_job_id: (assemblyResult as any)?.renderProjectId || (result as any)?.taskId || null,
           completed_at: jobStatus === 'completed' ? new Date().toISOString() : null,
           output_metadata: {
             chapters: chapterResults.map(c => ({ id: c.chapterId, product: c.product, success: c.success })),
