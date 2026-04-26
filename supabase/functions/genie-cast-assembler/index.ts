@@ -454,8 +454,8 @@ serve(async (req) => {
         } catch (_) { /* best-effort */ }
       }
 
-      const sceneDuration = preBuiltChapters.reduce((sum, c) => sum + c.duration, 0);
-      const transitionDuration = (transitions || []).reduce((sum, t) => sum + t.duration, 0);
+      const sceneDuration = preBuiltChapters.reduce((sum: number, c: any) => sum + c.duration, 0);
+      const transitionDuration = (transitions || []).reduce((sum: number, t: any) => sum + t.duration, 0);
       const bookendDuration = (bookends?.opening.duration || 0) + (bookends?.closing.duration || 0);
       const totalDuration = sceneDuration + transitionDuration + bookendDuration;
 
