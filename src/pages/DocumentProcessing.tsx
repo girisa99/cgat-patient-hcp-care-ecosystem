@@ -3342,6 +3342,15 @@ export default function DocumentProcessing() {
         setActiveTab('patient-info');
       }
       
+      // [DOC-DIAG] Checkpoint #2: Save complete -> opening sub-agent dialog
+      console.log('[DOC-DIAG] ✅ Save complete, opening SubAgentRecommendationDialog', {
+        docType: selectedDocType,
+        hasProcessingResult: !!processingResult,
+        extractedFieldsKeys: processingResult ? Object.keys(processingResult.extractedFields || {}) : [],
+        medicationsCount: Array.isArray((processingResult?.extractedFields as any)?.medications)
+          ? (processingResult?.extractedFields as any).medications.length
+          : ((processingResult?.extractedFields as any)?.medications?.value?.length ?? 'n/a'),
+      });
       // Show sub-agent dialog after successful save (user has verified fields)
       setShowSubAgentDialog(true);
     } catch (err) {
