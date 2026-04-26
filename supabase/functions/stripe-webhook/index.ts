@@ -68,7 +68,7 @@ serve(async (req) => {
     try {
       event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
     } catch (err) {
-      logStep("ERROR: Signature verification failed", { error: err.message });
+      logStep("ERROR: Signature verification failed", { error: (err as Error).message });
       return new Response(JSON.stringify({ error: "Invalid signature" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -122,7 +122,7 @@ serve(async (req) => {
 });
 
 async function handleSubscriptionChange(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   stripe: Stripe,
   subscription: Stripe.Subscription
 ) {
@@ -208,7 +208,7 @@ async function handleSubscriptionChange(
 }
 
 async function handleSubscriptionCanceled(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   stripe: Stripe,
   subscription: Stripe.Subscription
 ) {
