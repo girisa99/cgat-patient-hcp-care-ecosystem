@@ -97,6 +97,18 @@ export function useAgentExecution(): UseAgentExecutionReturn {
         allMedications: documentData.allMedications || []
       };
       
+      // [DOC-DIAG] Checkpoint #4: Invoking edge function for agent
+      console.log('[DOC-DIAG] 🚀 Invoking execute-document-agent', {
+        agentId: agent.id,
+        agentName: agent.name,
+        readyStatus: agent.readyStatus,
+        docType: documentData.documentType,
+        extractedFieldsCount: Object.keys(documentData.extractedFields || {}).length,
+        hasMedicationsField: !!(documentData.extractedFields as any)?.medications,
+        allMedicationsCount: documentData.allMedications?.length ?? 0,
+        provider: effectiveProvider ?? 'auto',
+      });
+      
       // Call the edge function
       const { data, error } = await supabase.functions.invoke('execute-document-agent', {
         body: {
@@ -119,7 +131,21 @@ export function useAgentExecution(): UseAgentExecutionReturn {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[DOC-DIAG] ❌ execute-document-agent invoke error', { agentId: agent.id, error });
+        throw error;
+      }
+      
+      // [DOC-DIAG] Checkpoint #5: Edge function response
+      console.log('[DOC-DIAG] ✅ Agent response received', {
+        agentId: agent.id,
+        success: data?.success,
+        confidence: data?.findings?.confidence,
+        dataSource: data?.findings?.dataSource,
+        provider: data?.findings?.provider,
+        findingsKeys: data?.findings?.details ? Object.keys(data.findings.details) : [],
+        alertsCount: data?.findings?.alerts?.length ?? 0,
+      });
 
       const executionTimeMs = Date.now() - startTime;
 
