@@ -8,6 +8,32 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// ============================================================================
+// HALLUCINATION GUARDS
+// ============================================================================
+// AI extractors can fabricate identifier-style fields (NDC, NPI, DEA) that
+// look plausible but are not actually present in the source document.
+// `validateIdentifierAgainstSource` returns true only when the identifier
+// (digits/letters, ignoring whitespace and dashes) appears in the OCR/raw
+// text. Use this for any field that must trace back to the document.
+function normalizeIdentifierForCompare(value: unknown): string {
+  if (value === null || value === undefined) return '';
+  return String(value).replace(/[\s\-_.]/g, '').toLowerCase();
+}
+
+function validateIdentifierAgainstSource(
+  identifier: unknown,
+  sourceText: string | undefined | null,
+  options: { minLength?: number } = {}
+): boolean {
+  const minLength = options.minLength ?? 4;
+  const id = normalizeIdentifierForCompare(identifier);
+  if (!id || id.length < minLength) return false;
+  const src = normalizeIdentifierForCompare(sourceText || '');
+  if (!src) return false;
+  return src.includes(id);
+}
+
 // Standard medical reference ranges
 const MEDICAL_REFERENCE_RANGES = {
   brain: {
