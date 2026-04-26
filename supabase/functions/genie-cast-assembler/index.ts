@@ -955,7 +955,7 @@ serve(async (req) => {
           output_url: result.videoUrl || null,
           output_thumbnail_url: result.thumbnailUrl || null,
           output_duration_seconds: totalDuration || null,
-          provider_job_id: assemblyResult.renderProjectId || null,
+          provider_job_id: (assemblyResult as any)?.renderProjectId || (result as any)?.taskId || null,
           completed_at: jobStatus === 'completed' ? new Date().toISOString() : null,
           output_metadata: {
             chapters: chapterResults.map(c => ({ id: c.chapterId, product: c.product, success: c.success })),
