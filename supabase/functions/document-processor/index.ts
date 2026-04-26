@@ -2228,6 +2228,12 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
             // NEVER emit standalone medication fields - only the array items
             // ============================================
             const medicationsArray = extracted.medications || extracted.fields?.medications;
+            // Source text for hallucination validation (NDC, NPI, DEA, etc.)
+            const sourceTextForValidation = [
+              ocrTextExtracted || '',
+              (extracted as any)?.raw_text || '',
+              (extracted as any)?.fields?.raw_text || ''
+            ].join('\n');
             if (medicationsArray && Array.isArray(medicationsArray) && medicationsArray.length > 0) {
               console.log(`[Extraction] Found medications array with ${medicationsArray.length} items - normalizing to clean format`);
               
