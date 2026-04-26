@@ -986,6 +986,23 @@ export default function SubAgentRecommendationDialog({
     return [...baseAgents, ...customAgents];
   }, [documentType.id, customAgents]);
 
+  // [DOC-DIAG] Checkpoint #3: Dialog opened + suggestions resolved
+  React.useEffect(() => {
+    if (!open) return;
+    const readyAgents = suggestions.filter(s => s.readyStatus === 'ready' || s.readyStatus === 'ai-powered');
+    const ed: any = extractedData || {};
+    console.log('[DOC-DIAG] 📋 SubAgentDialog OPEN', {
+      docTypeId: documentType.id,
+      totalSuggestions: suggestions.length,
+      readyToUseCount: readyAgents.length,
+      readyToUseIds: readyAgents.map(a => a.id),
+      hasProcessingResult: !!ed.processingResult,
+      hasPendingMedicationData: !!ed.pendingMedicationData,
+      multiMedicationResultsKeys: ed.multiMedicationResults ? Object.keys(ed.multiMedicationResults) : [],
+      isDataConfirmed: ed.isDataConfirmed,
+    });
+  }, [open, documentType.id, suggestions, extractedData]);
+
   // Check if cross-document data is needed based on selected agents
   const needsInsuranceData = useMemo(() => {
     if (documentType.id === 'insurance') return false;
