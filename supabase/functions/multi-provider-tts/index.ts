@@ -1261,7 +1261,7 @@ serve(async (req) => {
     // ═══════════════════════════════════════════════════════════════════════════════
     // SYNCHRONOUS PROCESSING FOR SHORT CONTENT
     // ═══════════════════════════════════════════════════════════════════════════════
-    let audioBuffer: ArrayBuffer;
+    let audioBuffer: ArrayBuffer = new ArrayBuffer(0);
     
     const generateWithProvider = async (provider: TTSProvider): Promise<ArrayBuffer> => {
       switch (provider) {
