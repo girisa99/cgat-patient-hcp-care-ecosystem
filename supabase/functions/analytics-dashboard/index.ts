@@ -111,7 +111,7 @@ serve(async (req) => {
         const completedConversations = conversations?.filter(c => c.status === 'completed').length || 0;
         
         // Calculate average messages per conversation
-        const avgMessages = conversations?.reduce((acc, c) => {
+        const avgMessages = (conversations ?? []).reduce((acc, c) => {
           const messages = (c.conversation_data as any)?.messages?.length || 0;
           return acc + messages;
         }, 0) / Math.max(totalConversations, 1);
@@ -142,7 +142,7 @@ serve(async (req) => {
 
         const totalActions = actionLogs?.length || 0;
         const successfulActions = actionLogs?.filter(a => a.status === 'completed').length || 0;
-        const avgDuration = actionLogs?.reduce((acc, a) => acc + (a.duration_ms || 0), 0) / Math.max(totalActions, 1);
+        const avgDuration = (actionLogs ?? []).reduce((acc, a) => acc + (a.duration_ms || 0), 0) / Math.max(totalActions, 1);
 
         const performanceMetrics = {
           total_actions: totalActions,

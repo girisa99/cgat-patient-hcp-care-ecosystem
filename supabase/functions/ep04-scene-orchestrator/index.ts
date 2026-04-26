@@ -43,7 +43,7 @@ let VOICE_ROUTING = { ...VOICE_ROUTING_FALLBACK };
  * Falls back to hardcoded map if no project_id or no DB data.
  */
 async function loadVoiceRoutingFromDB(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   projectId?: string,
 ): Promise<void> {
   if (!projectId) {
@@ -67,7 +67,7 @@ async function loadVoiceRoutingFromDB(
     for (const char of data) {
       const vc = (char.voice_config || {}) as Record<string, any>;
       const fallback = vc.fallback || {};
-      dbRouting[char.character_key] = {
+      dbRouting[String(char.character_key)] = {
         provider: vc.provider || char.voice_provider || 'elevenlabs',
         voiceId: vc.voiceId || char.voice_id || '',
         fallbackProvider: fallback.provider || 'alibaba',
@@ -92,7 +92,7 @@ async function loadVoiceRoutingFromDB(
  * Returns a pipeline map keyed by scene_key, or null if no DB data.
  */
 async function loadScenePipelinesFromDB(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   projectId?: string,
 ): Promise<Record<string, any[]> | null> {
   if (!projectId) return null;
@@ -154,7 +154,7 @@ interface OrchestratorResult {
 // ─── STEP DISPATCHERS ───────────────────────────────────────────────────────
 
 async function dispatchTTS(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   voice: string,
   scriptKey: string,
   scriptContent: Record<string, { text: string }>,
@@ -229,7 +229,7 @@ async function dispatchTTS(
 
       throw new Error('No audio URL or content returned');
     } catch (err) {
-      console.warn(`  ⚠️ TTS ${provider} failed for ${voice}: ${err.message}, trying fallback...`);
+      console.warn(`  ⚠️ TTS ${provider} failed for ${voice}: ${err instanceof Error ? err.message : String(err)}, trying fallback...`);
       continue;
     }
   }
@@ -238,7 +238,7 @@ async function dispatchTTS(
 }
 
 async function dispatchAvatar3D(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   character: string,
   style: string,
 ): Promise<SceneStepResult> {
@@ -269,7 +269,7 @@ async function dispatchAvatar3D(
 }
 
 async function dispatchLipsync(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   character: string,
   provider: string,
 ): Promise<SceneStepResult> {
@@ -299,7 +299,7 @@ async function dispatchLipsync(
 }
 
 async function dispatchAlibabaVideo(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   model: string,
   prompt: string,
   referenceImage?: string,
@@ -327,12 +327,12 @@ async function dispatchAlibabaVideo(
       metadata: { model },
     };
   } catch (err) {
-    return { type: 'alibaba-video', success: false, error: err.message, metadata: { model } };
+    return { type: 'alibaba-video', success: false, error: err instanceof Error ? err.message : String(err), metadata: { model } };
   }
 }
 
 async function dispatchAlibabaImage(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   model: string,
   prompt: string,
 ): Promise<SceneStepResult> {
@@ -356,12 +356,12 @@ async function dispatchAlibabaImage(
       metadata: { model },
     };
   } catch (err) {
-    return { type: 'alibaba-image', success: false, error: err.message };
+    return { type: 'alibaba-image', success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
 
 async function dispatchScreenCapture(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   screenIds: string[],
 ): Promise<SceneStepResult> {
   console.log(`  📸 Screen capture: [${screenIds.join(', ')}]`);
@@ -384,7 +384,7 @@ async function dispatchScreenCapture(
 }
 
 async function dispatchAIScreenEnhance(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   screenIds: string[],
   scriptContext: string,
   enhanceMode: string,
@@ -423,12 +423,12 @@ async function dispatchAIScreenEnhance(
       metadata: { enhanceMode, screenIds },
     };
   } catch (err) {
-    return { type: 'ai-screen-enhance', success: false, error: err.message };
+    return { type: 'ai-screen-enhance', success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
 
 async function dispatchMusic(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   prompt: string,
   duration: number,
 ): Promise<SceneStepResult> {
@@ -450,12 +450,12 @@ async function dispatchMusic(
 
     return { type: 'music', success: true, url: data?.url, duration };
   } catch (err) {
-    return { type: 'music', success: false, error: err.message };
+    return { type: 'music', success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
 
 async function dispatchSFX(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   prompt: string,
   duration?: number,
 ): Promise<SceneStepResult> {
@@ -476,14 +476,14 @@ async function dispatchSFX(
 
     return { type: 'sfx', success: true, url: data?.url, duration };
   } catch (err) {
-    return { type: 'sfx', success: false, error: err.message };
+    return { type: 'sfx', success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
 
 // ─── HELPERS ────────────────────────────────────────────────────────────────
 
 async function uploadBase64Audio(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   base64Content: string,
   pathPrefix: string,
 ): Promise<string> {
@@ -738,7 +738,7 @@ serve(async (req) => {
   } catch (err) {
     console.error('❌ EP04 Orchestrator error:', err);
     return new Response(
-      JSON.stringify({ success: false, error: err.message, scenes: [], totalDuration: 0, assetsGenerated: 0, errors: [err.message] }),
+      JSON.stringify({ success: false, error: err instanceof Error ? err.message : String(err), scenes: [], totalDuration: 0, assetsGenerated: 0, errors: [err.message] }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   }

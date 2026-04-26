@@ -345,11 +345,11 @@ async function disconnectCalendar(provider: string): Promise<{ disconnected: boo
 }
 
 // Helper functions (would connect to database in production)
-async function getHubEvents(dateRange?: { start: string; end: string }) {
+async function getHubEvents(dateRange?: { start: string; end: string }): Promise<any[]> {
   return []; // Would query shows/sessions from database
 }
 
-async function getExternalEvents(request: CalendarSyncRequest) {
+async function getExternalEvents(request: CalendarSyncRequest): Promise<any[]> {
   return []; // Would call provider API
 }
 

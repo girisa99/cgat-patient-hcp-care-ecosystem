@@ -40,7 +40,7 @@ const POLLY_VOICES = {
 async function hmacSha256(key: Uint8Array, message: string): Promise<Uint8Array> {
   const cryptoKey = await crypto.subtle.importKey(
     'raw',
-    key,
+    key.buffer.slice(key.byteOffset, key.byteOffset + key.byteLength) as ArrayBuffer,
     { name: 'HMAC', hash: 'SHA-256' },
     false,
     ['sign']
@@ -204,7 +204,7 @@ serve(async (req) => {
 
     // Get audio data
     const audioBuffer = await response.arrayBuffer();
-    const audioBase64 = base64Encode(new Uint8Array(audioBuffer));
+    const audioBase64 = base64Encode(new Uint8Array(audioBuffer) as any);
 
     console.log(`[Amazon Polly] Generated ${audioBuffer.byteLength} bytes of audio`);
 
