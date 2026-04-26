@@ -1699,6 +1699,23 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
     primaryProviders: ['browser', 'azure', 'openai', 'modelslab'],
     requiredSecrets: ['AZURE_API_KEY', 'OPENAI_API_KEY', 'MODELSLAB_API_KEY'],
   },
+  'auto-record-to-animation': {
+    pipeline: 'auto-record-to-animation',
+    stages: [
+      { stage: 1, name: 'Voice Recording', inputType: 'voice', outputType: 'audio', agent: 'voice-recorder', provider: 'browser', models: ['web-audio-api'] },
+      { stage: 2, name: 'Speech-to-Text', inputType: 'audio', outputType: 'text', agent: 'stt-agent', provider: 'azure', models: ['whisper'] },
+      { stage: 3, name: 'Storyboard', inputType: 'text', outputType: 'image', agent: 'storyboard-agent', provider: 'openai', models: ['gpt-image-1'] },
+      { stage: 4, name: 'Animation', inputType: 'image', outputType: 'animation', agent: 'animation-agent', provider: 'modelslab', models: ['animatediff-v2'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['voice-recorder', 'stt-agent', 'storyboard-agent', 'animation-agent'],
+    estimatedDurationSeconds: 200,
+    customerPainPoint: 'Animation creation from voice ideas is multi-step',
+    platformSolution: 'Speak your animation idea → AI animates it',
+    primaryProviders: ['browser', 'azure', 'openai', 'modelslab'],
+    requiredSecrets: ['AZURE_API_KEY', 'OPENAI_API_KEY', 'MODELSLAB_API_KEY'],
+  },
   'auto-record-to-vr': {
     pipeline: 'auto-record-to-vr',
     stages: [

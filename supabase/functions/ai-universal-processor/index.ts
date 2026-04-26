@@ -115,6 +115,7 @@ interface AIRequest {
   imageGeneration?: boolean;
   aspectRatio?: string;
   style?: string;
+  size?: string;
   // Scene analysis context
   context?: {
     image?: string;
@@ -1437,11 +1438,11 @@ Return ONLY valid JSON:
       usage: response.usage,
       timestamp: new Date().toISOString(),
       // Include image URL if present
-      ...(response.imageUrl && { imageUrl: response.imageUrl }),
-      ...(response.isImage && { isImage: response.isImage }),
+      ...((response as any).imageUrl && { imageUrl: (response as any).imageUrl }),
+      ...((response as any).isImage && { isImage: (response as any).isImage }),
     };
 
-    console.log(`AI response generated successfully - Provider: ${provider}, Content length: ${response.content?.length || 0}, HasImage: ${!!response.imageUrl}`);
+    console.log(`AI response generated successfully - Provider: ${provider}, Content length: ${response.content?.length || 0}, HasImage: ${!!(response as any).imageUrl}`);
 
     return new Response(JSON.stringify(aiResponse), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -1716,7 +1717,7 @@ async function callGemini(model: string, prompt: string, systemPrompt?: string, 
       console.log(`[Gemini] Retry attempt ${attempt} after ${delay}ms`);
       await new Promise(r => setTimeout(r, delay));
       
-      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${apiKey}`, {
+      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${normalizedModel}:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

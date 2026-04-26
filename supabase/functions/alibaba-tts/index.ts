@@ -155,7 +155,7 @@ type RegionName = 'china-beijing' | 'singapore' | 'virginia';
 interface ApiConfig {
   apiKey: string;
   region: RegionName;
-  endpoints: typeof ENDPOINTS.china;
+  endpoints: typeof ENDPOINTS.china | typeof ENDPOINTS.singapore | typeof ENDPOINTS.virginia;
 }
 
 /**
@@ -179,7 +179,7 @@ function getAllApiConfigs(): ApiConfig[] {
 function getApiConfig(): {
   apiKey: string | null;
   region: RegionName;
-  endpoints: typeof ENDPOINTS.china;
+  endpoints: typeof ENDPOINTS.china | typeof ENDPOINTS.singapore | typeof ENDPOINTS.virginia;
 } {
   const configs = getAllApiConfigs();
   if (configs.length > 0) return configs[0];
