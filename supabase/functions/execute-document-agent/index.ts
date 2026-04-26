@@ -416,50 +416,91 @@ function extractAllMedications(fields: Record<string, any>): ExtractedMedication
 
   // Method 1b: Fallback to line_items (used by prescription extraction pipeline)
   // line_items contains structured rx rows with medication_name/brand_name/sig/etc.
+  // Also widen to alternative container keys some extractors emit (items, rxItems, prescriptions, drugs).
   if (!medicationsArray) {
+    const candidateContainerKeys = [
+      'line_items', 'lineItems',
+      'items', 'rx_items', 'rxItems',
+      'prescriptions', 'prescription_items',
+      'drugs', 'drug_list', 'medication_list', 'medications_list'
+    ];
     let lineItemsArray: any[] | null = null;
-    if (Array.isArray(fields.line_items)) {
-      lineItemsArray = fields.line_items;
-    } else if (fields.line_items?.value) {
-      if (Array.isArray(fields.line_items.value)) {
-        lineItemsArray = fields.line_items.value;
-      } else if (typeof fields.line_items.value === 'string') {
-        try {
-          const parsed = JSON.parse(fields.line_items.value);
-          if (Array.isArray(parsed)) {
-            lineItemsArray = parsed;
-            console.log('[extractAllMedications] Parsed line_items from JSON string');
+    let matchedKey = '';
+    for (const key of candidateContainerKeys) {
+      const raw = (fields as any)[key];
+      if (!raw) continue;
+      if (Array.isArray(raw)) {
+        lineItemsArray = raw; matchedKey = key; break;
+      }
+      if (raw?.value) {
+        if (Array.isArray(raw.value)) {
+          lineItemsArray = raw.value; matchedKey = key; break;
+        }
+        if (typeof raw.value === 'string') {
+          try {
+            const parsed = JSON.parse(raw.value);
+            if (Array.isArray(parsed)) {
+              lineItemsArray = parsed;
+              matchedKey = key;
+              console.log(`[extractAllMedications] Parsed ${key} from JSON string`);
+              break;
+            }
+          } catch (e) {
+            console.log(`[extractAllMedications] Failed to parse ${key} JSON string:`, e);
           }
-        } catch (e) {
-          console.log('[extractAllMedications] Failed to parse line_items JSON string:', e);
         }
       }
     }
     if (lineItemsArray && lineItemsArray.length > 0) {
-      // Filter to rows that look like medications
+      // Filter to rows that look like medications — widened key matcher
       medicationsArray = lineItemsArray.filter((row: any) =>
-        row && (row.medication_name || row.drug_name || row.name || row.brand_name)
+        row && (
+          row.medication_name || row.medicationName ||
+          row.drug_name || row.drugName ||
+          row.brand_name || row.brandName ||
+          row.generic_name || row.genericName ||
+          row.product_name || row.productName ||
+          row.name || row.drug || row.medication || row.rx || row.description
+        )
       );
-      console.log('[extractAllMedications] Using line_items as medication source:', medicationsArray.length);
+      console.log(`[extractAllMedications] Using ${matchedKey} as medication source:`, medicationsArray.length);
     }
   }
     
   if (medicationsArray) {
     console.log('[extractAllMedications] Processing medications array with', medicationsArray.length, 'items');
     medicationsArray.forEach((med: any) => {
-      const medName = med.medication_name || med.name || med.drug_name;
-      if (medName) {
+      // Widened name resolution: prefer brand_name, fall back across drug_name/medication_name/generic/product/etc.
+      const brand = med.brand_name || med.brandName;
+      const generic = med.generic_name || med.genericName;
+      const primaryName =
+        med.medication_name || med.medicationName ||
+        med.drug_name || med.drugName ||
+        brand || generic ||
+        med.product_name || med.productName ||
+        med.name || med.drug || med.medication || med.rx || med.description;
+
+      // Compose display name: "Brand (Generic)" when both exist and differ
+      let displayName = primaryName;
+      if (brand && generic && brand.toLowerCase().trim() !== generic.toLowerCase().trim()) {
+        displayName = `${brand} (${generic})`;
+      } else if (brand && primaryName && brand.toLowerCase().trim() !== String(primaryName).toLowerCase().trim()) {
+        // Surface brand alongside primary name when they differ
+        displayName = `${primaryName} (${brand})`;
+      }
+
+      if (displayName) {
         addMedication({
-          name: medName,
-          strength: med.strength || med.dosage || med.form,
-          sig: med.sig || med.directions || med.sig_text,
-          ndc: med.ndc,
-          quantity: med.quantity,
-          refills: med.refills,
-          route: med.route,
-          dosageForm: med.dosage_form || med.form,
-          isControlled: med.is_controlled,
-          schedule: med.schedule
+          name: displayName,
+          strength: med.strength || med.dosage || med.dose || med.form,
+          sig: med.sig || med.sig_text || med.sigText || med.directions || med.instructions,
+          ndc: med.ndc || med.ndc_code || med.ndcCode,
+          quantity: med.quantity || med.qty || med.dispense,
+          refills: med.refills || med.refill,
+          route: med.route || med.route_of_administration,
+          dosageForm: med.dosage_form || med.dosageForm || med.form,
+          isControlled: med.is_controlled ?? med.isControlled,
+          schedule: med.schedule || med.dea_schedule
         });
       }
     });
