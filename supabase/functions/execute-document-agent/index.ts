@@ -319,10 +319,12 @@ function getFieldValue(fields: Record<string, any>, ...fieldNames: string[]): st
   return undefined;
 }
 
-// Get medication name with comprehensive fallbacks
+// Get medication name with comprehensive fallbacks (brand-aware)
 function getMedicationName(fields: Record<string, any>): string {
-  return getFieldValue(fields, 
-    'medication', 'medication_name', 'drug_name', 'drug', 
+  return getFieldValue(fields,
+    'medication', 'medication_name', 'drug_name', 'drug',
+    'brand_name', 'brandName', 'generic_name', 'genericName',
+    'product_name', 'productName',
     'medicine', 'rx', 'prescription', 'med_name',
     'medicationName', 'drugName', 'medicineName'
   ) || 'Unknown';
