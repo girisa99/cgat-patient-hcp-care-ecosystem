@@ -343,7 +343,7 @@ async function dispatchTTS(
 
       throw new Error('No audio URL or content returned');
     } catch (err) {
-      console.warn(`  ⚠️ TTS ${provider} failed for ${voice}: ${err.message}, trying fallback...`);
+      console.warn(`  ⚠️ TTS ${provider} failed for ${voice}: ${err instanceof Error ? err.message : String(err)}, trying fallback...`);
       continue;
     }
   }
@@ -400,7 +400,7 @@ async function dispatchVideo(
     if (error) throw new Error(error.message);
     return { type: 'video', success: true, url: data?.videoUrl || data?.url, metadata: { model } };
   } catch (err) {
-    return { type: 'video', success: false, error: err.message, metadata: { model } };
+    return { type: 'video', success: false, error: err instanceof Error ? err.message : String(err), metadata: { model } };
   }
 }
 
@@ -417,7 +417,7 @@ async function dispatchImage(
     if (error) throw new Error(error.message);
     return { type: 'image', success: true, url: data?.imageUrl || data?.url, metadata: { model } };
   } catch (err) {
-    return { type: 'image', success: false, error: err.message };
+    return { type: 'image', success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
 
@@ -462,7 +462,7 @@ async function dispatchAIScreenEnhance(
     if (error) throw new Error(error.message);
     return { type: 'ai-screen-enhance', success: true, url: data?.imageUrl || data?.url, metadata: { enhanceMode, screenIds } };
   } catch (err) {
-    return { type: 'ai-screen-enhance', success: false, error: err.message };
+    return { type: 'ai-screen-enhance', success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
 
@@ -483,7 +483,7 @@ async function dispatchMusic(
     }
     return { type: 'music', success: true, url: data?.url, duration };
   } catch (err) {
-    return { type: 'music', success: false, error: err.message };
+    return { type: 'music', success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
 
@@ -504,7 +504,7 @@ async function dispatchSFX(
     }
     return { type: 'sfx', success: true, url: data?.url, duration };
   } catch (err) {
-    return { type: 'sfx', success: false, error: err.message };
+    return { type: 'sfx', success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
 
@@ -727,7 +727,7 @@ serve(async (req) => {
   } catch (err) {
     console.error('❌ Universal Orchestrator error:', err);
     return new Response(
-      JSON.stringify({ success: false, error: err.message, scenes: [], totalDuration: 0, assetsGenerated: 0, errors: [err.message] }),
+      JSON.stringify({ success: false, error: err instanceof Error ? err.message : String(err), scenes: [], totalDuration: 0, assetsGenerated: 0, errors: [err.message] }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   }
