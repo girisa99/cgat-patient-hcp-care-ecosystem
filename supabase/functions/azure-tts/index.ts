@@ -70,7 +70,7 @@ function buildSSML(text: string, voice: string, rate?: number, pitch?: number, s
   ssml += `<voice name="${voiceName}">`;
   
   // Add style if supported
-  if (style && voiceConfig.style?.includes(style)) {
+  if (style && (voiceConfig.style as string[])?.includes(style)) {
     ssml += `<mstts:express-as style="${style}">`;
   }
   
@@ -78,7 +78,7 @@ function buildSSML(text: string, voice: string, rate?: number, pitch?: number, s
   ssml += escapeXml(text);
   ssml += `</prosody>`;
   
-  if (style && voiceConfig.style?.includes(style)) {
+  if (style && (voiceConfig.style as string[])?.includes(style)) {
     ssml += `</mstts:express-as>`;
   }
   
@@ -160,7 +160,7 @@ serve(async (req) => {
 
     // Get audio data
     const audioBuffer = await response.arrayBuffer();
-    const audioBase64 = base64Encode(new Uint8Array(audioBuffer));
+    const audioBase64 = base64Encode(new Uint8Array(audioBuffer) as any);
 
     console.log(`[Azure TTS] Generated ${audioBuffer.byteLength} bytes of audio`);
 

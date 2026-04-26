@@ -122,8 +122,9 @@ async function routeToProvider(systemPrompt: string, userPrompt: string): Promis
       console.log(`[CI] ${provider.name} succeeded`);
       return result;
     } catch (err) {
-      errors.push(`${provider.name}: ${err.message}`);
-      console.warn(`[CI] ${provider.name} failed: ${err.message}`);
+      const msg = err instanceof Error ? err.message : String(err);
+      errors.push(`${provider.name}: ${msg}`);
+      console.warn(`[CI] ${provider.name} failed: ${msg}`);
     }
   }
 
