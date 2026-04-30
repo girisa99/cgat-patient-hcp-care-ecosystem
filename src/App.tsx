@@ -268,8 +268,15 @@ const AppContent = () => {
                 </Suspense>
               } />
 
-              {/* EP04 Part 2 — launcher seeds template then redirects to generic production */}
+              {/* EP04 Part 2 — dedicated scene-by-scene production page (mirrors Part 1 layout) */}
               <Route path="/genie-cast/ep04-part2-production" element={
+                <Suspense fallback={<PageLoading message="Loading EP04 Part 2..." />}>
+                  {React.createElement(React.lazy(() => import('@/pages/EP04Part2Production')))}
+                </Suspense>
+              } />
+
+              {/* EP04 Part 2 — legacy launcher (seeds DB then redirects to generic CastProductionPage) */}
+              <Route path="/genie-cast/ep04-part2-production/seed" element={
                 <Suspense fallback={<PageLoading message="Preparing EP04 Part 2..." />}>
                   {React.createElement(React.lazy(() => import('@/pages/EP04Part2Launcher')))}
                 </Suspense>

@@ -1189,3 +1189,40 @@ export const EP04_PART2_PIPELINE_READINESS = [
   { id: 'p2-ready-19', phase: 'models', check: 'Dynamic model resolution with fallback chain', status: 'ready' },
   { id: 'p2-ready-20', phase: 'keys', check: 'All keys prefixed p2- — no Part 1 collisions', status: 'ready' },
 ] as const;
+
+// ---------------------------------------------------------------------------
+// PART 2 — Transition → parent scene map
+// Bridges have scene `p2-transition-N-to-M`; this map folds them into scene N
+// (matches Part 1's TRANSITION_TO_SCENE pattern in EP04Production.tsx).
+// ---------------------------------------------------------------------------
+
+export const PART2_TRANSITION_TO_SCENE: Record<string, string> = {
+  'p2-transition-0-to-1':   P2_SCENES.COLD_OPEN,
+  'p2-transition-1-to-2':   P2_SCENES.RECAP,
+  'p2-transition-2-to-3':   P2_SCENES.NOVA_FAREWELL,
+  'p2-transition-3-to-4':   P2_SCENES.ATLAS_SOLO,
+  'p2-transition-4-to-5':   P2_SCENES.JSON2VIDEO_DEATH,
+  'p2-transition-5-to-6':   P2_SCENES.PRODUCTION_HELL,
+  'p2-transition-6-to-7':   P2_SCENES.MODEL_CRISIS,
+  'p2-transition-7-to-8':   P2_SCENES.PROVIDER_STACK,
+  'p2-transition-8-to-9':   P2_SCENES.CHARACTERS_SPEAK,
+  'p2-transition-9-to-10':  P2_SCENES.PIPELINE_LIVE,
+  'p2-transition-10-to-11': P2_SCENES.THIRTY_MINUTES,
+  'p2-transition-11-to-12': P2_SCENES.META_MOMENT,
+  'p2-transition-12-to-13': P2_SCENES.DIFFERENT_PODCAST,
+  'p2-transition-13-to-14': P2_SCENES.IMAGINATION,
+  'p2-transition-14-to-15': P2_SCENES.RETRO_CTA,
+};
+
+// Stub structures so a Part-2 production page can import them with the same
+// shape as Part 1's EP04_CHARACTER_INTERACTIONS / EP04_NARRATOR_SCROLLS.
+// Populate per-scene group/argument/scroll prompts incrementally.
+export const EP04_PART2_CHARACTER_INTERACTIONS: {
+  sceneId: string;
+  steps: Array<Record<string, unknown>>;
+}[] = [];
+
+export const EP04_PART2_NARRATOR_SCROLLS: {
+  sceneId: string;
+  steps: Array<Record<string, unknown>>;
+}[] = [];
