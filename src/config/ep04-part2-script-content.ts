@@ -2013,7 +2013,7 @@ export const EP04_PART2_NARRATOR_BRIDGES: Record<string, Part2ScriptLine> = {
   'p2-bridge-0-1': {
     text: "The storybook opens to a familiar page... but the ink is fresh.",
     voice: 'allaudin',
-    scene: 'bridge',
+    scene: 'p2-transition-0-to-1',
     duration_est: 4,
     direction: 'Storybook page transition from cold open to recap.',
     lipsync: true,
@@ -2029,7 +2029,7 @@ export const EP04_PART2_NARRATOR_BRIDGES: Record<string, Part2ScriptLine> = {
   'p2-bridge-1-2': {
     text: "But every story has its turning points. And this one arrived on Day 6.",
     voice: 'allaudin',
-    scene: 'bridge',
+    scene: 'p2-transition-1-to-2',
     duration_est: 5,
     direction: 'Page turn to Nova farewell. Dramatic color shift.',
     lipsync: true,
@@ -2045,7 +2045,7 @@ export const EP04_PART2_NARRATOR_BRIDGES: Record<string, Part2ScriptLine> = {
   'p2-bridge-2-3': {
     text: "One left. But one was all it took.",
     voice: 'allaudin',
-    scene: 'bridge',
+    scene: 'p2-transition-2-to-3',
     duration_est: 3,
     direction: 'Quick bridge — Nova gone, Atlas alone.',
     lipsync: true,
@@ -2060,7 +2060,7 @@ export const EP04_PART2_NARRATOR_BRIDGES: Record<string, Part2ScriptLine> = {
   'p2-bridge-3-4': {
     text: "With the code under control, there was a bigger problem. The production itself.",
     voice: 'allaudin',
-    scene: 'bridge',
+    scene: 'p2-transition-3-to-4',
     duration_est: 5,
     direction: 'Transition from code work to production challenges.',
     lipsync: true,
@@ -2076,7 +2076,7 @@ export const EP04_PART2_NARRATOR_BRIDGES: Record<string, Part2ScriptLine> = {
   'p2-bridge-4-5': {
     text: "The forge was built. But could it survive the fire?",
     voice: 'allaudin',
-    scene: 'bridge',
+    scene: 'p2-transition-4-to-5',
     duration_est: 4,
     direction: 'Forge built, now tested by fire. Foreshadow production hell.',
     lipsync: true,
@@ -2092,7 +2092,7 @@ export const EP04_PART2_NARRATOR_BRIDGES: Record<string, Part2ScriptLine> = {
   'p2-bridge-5-6': {
     text: "They survived the fire. Then the ground shifted beneath them.",
     voice: 'allaudin',
-    scene: 'bridge',
+    scene: 'p2-transition-5-to-6',
     duration_est: 4,
     direction: 'Production hell resolved. Now model crisis incoming.',
     lipsync: true,
@@ -2108,7 +2108,7 @@ export const EP04_PART2_NARRATOR_BRIDGES: Record<string, Part2ScriptLine> = {
   'p2-bridge-6-7': {
     text: "From crisis, came architecture. From architecture, came... everything.",
     voice: 'allaudin',
-    scene: 'bridge',
+    scene: 'p2-transition-6-to-7',
     duration_est: 4,
     direction: 'Model registry success leads to the full provider stack reveal.',
     lipsync: true,
@@ -2124,7 +2124,7 @@ export const EP04_PART2_NARRATOR_BRIDGES: Record<string, Part2ScriptLine> = {
   'p2-bridge-7-8': {
     text: "Nineteen voices of AI. But could they make ONE voice speak?",
     voice: 'allaudin',
-    scene: 'bridge',
+    scene: 'p2-transition-7-to-8',
     duration_est: 4,
     direction: 'Transition from provider map to lipsync/voice synthesis.',
     lipsync: true,
@@ -2139,7 +2139,7 @@ export const EP04_PART2_NARRATOR_BRIDGES: Record<string, Part2ScriptLine> = {
   'p2-bridge-8-9': {
     text: "The characters spoke. The music played. Now... would the machine run?",
     voice: 'allaudin',
-    scene: 'bridge',
+    scene: 'p2-transition-8-to-9',
     duration_est: 4,
     direction: 'Characters and music ready. Pipeline about to run end-to-end.',
     lipsync: true,
@@ -2155,7 +2155,7 @@ export const EP04_PART2_NARRATOR_BRIDGES: Record<string, Part2ScriptLine> = {
   'p2-bridge-9-10': {
     text: "It ran. And now... let us tell you what that means.",
     voice: 'allaudin',
-    scene: 'bridge',
+    scene: 'p2-transition-9-to-10',
     duration_est: 4,
     direction: 'Pipeline success. Now the thesis explanation.',
     lipsync: true,
@@ -2170,7 +2170,7 @@ export const EP04_PART2_NARRATOR_BRIDGES: Record<string, Part2ScriptLine> = {
   'p2-bridge-10-11': {
     text: "From theory to proof. And the proof... is watching you. Right now.",
     voice: 'allaudin',
-    scene: 'bridge',
+    scene: 'p2-transition-10-to-11',
     duration_est: 4,
     direction: 'Meta transition — the episode becomes self-aware.',
     lipsync: true,
@@ -2186,7 +2186,7 @@ export const EP04_PART2_NARRATOR_BRIDGES: Record<string, Part2ScriptLine> = {
   'p2-bridge-11-12': {
     text: "If the proof exists... then the question changes. Not 'can it work?' but 'what does it mean?'",
     voice: 'allaudin',
-    scene: 'bridge',
+    scene: 'p2-transition-11-to-12',
     duration_est: 5,
     direction: 'Transition from meta moment to manifesto.',
     lipsync: true,
@@ -2201,7 +2201,7 @@ export const EP04_PART2_NARRATOR_BRIDGES: Record<string, Part2ScriptLine> = {
   'p2-bridge-12-13': {
     text: "What it means is this: imagination has a new address.",
     voice: 'allaudin',
-    scene: 'bridge',
+    scene: 'p2-transition-12-to-13',
     duration_est: 4,
     direction: 'Manifesto leads to imagination reflection.',
     lipsync: true,
@@ -2217,7 +2217,7 @@ export const EP04_PART2_NARRATOR_BRIDGES: Record<string, Part2ScriptLine> = {
   'p2-bridge-13-14': {
     text: "But every honest story admits what went wrong. And we have quite the list.",
     voice: 'allaudin',
-    scene: 'bridge',
+    scene: 'p2-transition-13-to-14',
     duration_est: 4,
     direction: 'Transition to retrospective. Honest tone shift.',
     lipsync: true,
@@ -2232,7 +2232,7 @@ export const EP04_PART2_NARRATOR_BRIDGES: Record<string, Part2ScriptLine> = {
   'p2-bridge-14-15': {
     text: "And now... the final page.",
     voice: 'allaudin',
-    scene: 'bridge',
+    scene: 'p2-transition-14-to-15',
     duration_est: 3,
     direction: 'Last bridge. Storybook approaching its final page.',
     lipsync: true,
