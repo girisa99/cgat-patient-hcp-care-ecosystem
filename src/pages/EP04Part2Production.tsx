@@ -34,7 +34,7 @@ import {
   EP04_PART2_TRANSITIONS,
   EP04_PART2_STORYBOOK_BOOKENDS,
   PART2_TRANSITION_TO_SCENE,
-  EP04_PART2_SCENE_TITLES,
+  EP04_PART2_EP04_PART2_SCENE_TITLES,
   EP04_PART2_VOICE_BADGE_CLASSES,
   resolvePart2VoiceWithFallback,
 } from '@/config/ep04-part2-production-config';
@@ -181,14 +181,14 @@ export default function EP04Part2Production() {
     const grp = sceneGroups.get(sceneKey);
     if (!grp) return;
     const lines = [...grp.dialogue, ...grp.bridges];
-    toast.info(`Generating ${lines.length} lines for ${SCENE_TITLES[sceneKey]}...`);
+    toast.info(`Generating ${lines.length} lines for ${EP04_PART2_SCENE_TITLES[sceneKey]}...`);
     for (const [k, l] of lines) {
       if (statusMap[k] === 'done') continue;
       // sequential to avoid hammering the edge function
       // eslint-disable-next-line no-await-in-loop
       await generateLine(k, l);
     }
-    toast.success(`Scene complete: ${SCENE_TITLES[sceneKey]}`);
+    toast.success(`Scene complete: ${EP04_PART2_SCENE_TITLES[sceneKey]}`);
   }, [sceneGroups, statusMap, generateLine]);
 
   // ─── Render helpers ───────────────────────────────────────────────────────
@@ -196,7 +196,7 @@ export default function EP04Part2Production() {
   const renderLine = (key: string, line: Part2ScriptLine, isBridge = false) => {
     const status = statusMap[key] || 'idle';
     const audio = audioMap[key];
-    const voiceClass = VOICE_COLORS[line.voice] || 'bg-muted text-foreground border-border';
+    const voiceClass = EP04_PART2_VOICE_BADGE_CLASSES[line.voice] || 'bg-muted text-foreground border-border';
     const isPlaying = playingKey === key;
 
     return (
@@ -316,7 +316,7 @@ export default function EP04Part2Production() {
                 <div className="flex items-center justify-between gap-3 sticky top-[65px] z-20 bg-background/95 backdrop-blur py-2">
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="font-mono">#{idx}</Badge>
-                    <h2 className="text-base font-semibold">{SCENE_TITLES[sceneKey]}</h2>
+                    <h2 className="text-base font-semibold">{EP04_PART2_SCENE_TITLES[sceneKey]}</h2>
                     <Badge variant="secondary" className="text-[10px]">
                       {grp.dialogue.length} lines
                       {grp.bridges.length > 0 && ` · ${grp.bridges.length} bridge`}
@@ -336,7 +336,7 @@ export default function EP04Part2Production() {
                 {trans && idx < SCENE_ORDER.length - 1 && (
                   <div className="ml-2 mt-2 p-3 rounded-md bg-violet-500/5 border border-violet-500/20">
                     <p className="text-[11px] uppercase tracking-wider text-violet-600 mb-1">
-                      Transition → {SCENE_TITLES[(trans as any).to] || (trans as any).to}
+                      Transition → {EP04_PART2_SCENE_TITLES[(trans as any).to] || (trans as any).to}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       Style: <span className="font-mono">{(trans as any).style || 'dissolve'}</span>
