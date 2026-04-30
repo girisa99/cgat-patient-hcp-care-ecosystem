@@ -199,63 +199,86 @@ export default function EP04Part2Production() {
     const voiceClass = EP04_PART2_VOICE_BADGE_CLASSES[line.voice] || 'bg-muted text-foreground border-border';
     const isPlaying = playingKey === key;
 
+    const avatarSrc = AVATAR_MAP[line.voice];
+
     return (
       <div
         key={key}
         className={cn(
-          'rounded-lg border p-3 space-y-2 transition-colors',
+          'rounded-lg border p-3 transition-colors flex gap-3',
           isBridge ? 'bg-muted/30 border-dashed' : 'bg-card',
         )}
       >
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Badge variant="outline" className={cn('font-mono text-[10px]', voiceClass)}>
-              {line.voice}
-            </Badge>
-            {isBridge && (
-              <Badge variant="outline" className="text-[10px] bg-violet-500/10 text-violet-600 border-violet-500/30">
-                bridge · {line.scene}
-              </Badge>
+        {/* Character avatar (config-driven via AVATAR_MAP) */}
+        {avatarSrc ? (
+          <img
+            src={avatarSrc}
+            alt={`${line.voice} character avatar`}
+            loading="lazy"
+            width={48}
+            height={48}
+            className={cn(
+              'h-12 w-12 rounded-full object-cover flex-shrink-0 border-2 ring-2 ring-background',
+              isBridge ? 'border-violet-500/40' : 'border-border',
             )}
-            <span className="font-mono text-[10px] text-muted-foreground">{key}</span>
-            {line.duration_est && (
-              <span className="text-[10px] text-muted-foreground">~{line.duration_est}s</span>
-            )}
+          />
+        ) : (
+          <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center flex-shrink-0 text-xs font-mono text-muted-foreground">
+            {line.voice.slice(0, 2)}
           </div>
-          <div className="flex items-center gap-1">
-            {status === 'generating' && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
-            {status === 'done' && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />}
-            {status === 'error' && <AlertCircle className="h-3.5 w-3.5 text-destructive" />}
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-7 px-2"
-              disabled={status === 'generating'}
-              onClick={() => generateLine(key, line)}
-            >
-              <Mic className="h-3.5 w-3.5 mr-1" />
-              {status === 'done' ? 'Regen' : 'Gen'}
-            </Button>
-            {audio && (
+        )}
+
+        <div className="flex-1 min-w-0 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge variant="outline" className={cn('font-mono text-[10px]', voiceClass)}>
+                {line.voice}
+              </Badge>
+              {isBridge && (
+                <Badge variant="outline" className="text-[10px] bg-violet-500/10 text-violet-600 border-violet-500/30">
+                  bridge · {line.scene}
+                </Badge>
+              )}
+              <span className="font-mono text-[10px] text-muted-foreground">{key}</span>
+              {line.duration_est && (
+                <span className="text-[10px] text-muted-foreground">~{line.duration_est}s</span>
+              )}
+            </div>
+            <div className="flex items-center gap-1">
+              {status === 'generating' && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+              {status === 'done' && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />}
+              {status === 'error' && <AlertCircle className="h-3.5 w-3.5 text-destructive" />}
               <Button
                 size="sm"
                 variant="ghost"
                 className="h-7 px-2"
-                onClick={() => isPlaying ? stopPlayback() : playLine(key)}
+                disabled={status === 'generating'}
+                onClick={() => generateLine(key, line)}
               >
-                {isPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+                <Mic className="h-3.5 w-3.5 mr-1" />
+                {status === 'done' ? 'Regen' : 'Gen'}
               </Button>
-            )}
+              {audio && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 px-2"
+                  onClick={() => isPlaying ? stopPlayback() : playLine(key)}
+                >
+                  {isPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
-        <p className={cn('text-sm leading-relaxed', isBridge && 'italic text-muted-foreground')}>
-          {line.text}
-        </p>
-        {line.direction && (
-          <p className="text-[11px] text-muted-foreground border-l-2 border-muted pl-2">
-            <span className="font-semibold">Direction:</span> {line.direction}
+          <p className={cn('text-sm leading-relaxed', isBridge && 'italic text-muted-foreground')}>
+            {line.text}
           </p>
-        )}
+          {line.direction && (
+            <p className="text-[11px] text-muted-foreground border-l-2 border-muted pl-2">
+              <span className="font-semibold">Direction:</span> {line.direction}
+            </p>
+          )}
+        </div>
       </div>
     );
   };
