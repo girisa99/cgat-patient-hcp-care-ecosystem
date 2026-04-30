@@ -1226,3 +1226,44 @@ export const EP04_PART2_NARRATOR_SCROLLS: {
   sceneId: string;
   steps: Array<Record<string, unknown>>;
 }[] = [];
+
+// ---------------------------------------------------------------------------
+// PART 2 — UI display config (single source of truth — do NOT hardcode in pages)
+// ---------------------------------------------------------------------------
+
+/** Human-readable scene titles. Keyed by P2_SCENES.* values. */
+export const EP04_PART2_SCENE_TITLES: Record<string, string> = {
+  [P2_SCENES.COLD_OPEN]:         'Scene 0 — Cold Open · What You\'re About to See',
+  [P2_SCENES.RECAP]:             'Scene 1 — Recap · The Story So Far',
+  [P2_SCENES.NOVA_FAREWELL]:     'Scene 2 — Nova\'s Farewell',
+  [P2_SCENES.ATLAS_SOLO]:        'Scene 3 — Atlas Flies Solo',
+  [P2_SCENES.JSON2VIDEO_DEATH]:  'Scene 4 — json2video Dies',
+  [P2_SCENES.PRODUCTION_HELL]:   'Scene 5 — Production Hell',
+  [P2_SCENES.MODEL_CRISIS]:      'Scene 6 — The Model Crisis',
+  [P2_SCENES.PROVIDER_STACK]:    'Scene 7 — The 19-Provider Stack',
+  [P2_SCENES.CHARACTERS_SPEAK]:  'Scene 8 — Characters Come Alive',
+  [P2_SCENES.PIPELINE_LIVE]:     'Scene 9 — Pipeline Goes Live',
+  [P2_SCENES.THIRTY_MINUTES]:    'Scene 10 — 30 Minutes of AI',
+  [P2_SCENES.META_MOMENT]:       'Scene 11 — The Meta Moment',
+  [P2_SCENES.DIFFERENT_PODCAST]: 'Scene 12 — A Different Kind of Podcast',
+  [P2_SCENES.IMAGINATION]:       'Scene 13 — What If We Could Imagine?',
+  [P2_SCENES.RETRO_CTA]:         'Scene 14 — Retro & CTA',
+  [P2_SCENES.FINALE]:            'Scene 15 — Finale · The End... For Now',
+};
+
+/**
+ * Voice → tailwind badge classes. Derived from each character's primary palette
+ * (from EP04_PART2_AVATAR_CONFIG) so badges visually match the avatar. Keep
+ * this in sync if a character's palette changes in EP04_PART2_AVATAR_CONFIG.
+ */
+export const EP04_PART2_VOICE_BADGE_CLASSES: Record<string, string> = {
+  host:     'bg-amber-500/15 text-amber-600 border-amber-500/30',
+  atlas:    'bg-sky-500/15 text-sky-600 border-sky-500/30',
+  nova:     'bg-rose-500/15 text-rose-600 border-rose-500/30',
+  squirrel: 'bg-orange-500/15 text-orange-600 border-orange-500/30',
+  allaudin: 'bg-violet-500/15 text-violet-600 border-violet-500/30',
+  owl:      'bg-emerald-500/15 text-emerald-600 border-emerald-500/30',
+  reel:     'bg-pink-500/15 text-pink-600 border-pink-500/30',
+  maestro:  'bg-indigo-500/15 text-indigo-600 border-indigo-500/30',
+  forge:    'bg-red-500/15 text-red-600 border-red-500/30',
+};

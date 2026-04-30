@@ -34,46 +34,37 @@ import {
   EP04_PART2_TRANSITIONS,
   EP04_PART2_STORYBOOK_BOOKENDS,
   PART2_TRANSITION_TO_SCENE,
+  EP04_PART2_SCENE_TITLES,
+  EP04_PART2_VOICE_BADGE_CLASSES,
   resolvePart2VoiceWithFallback,
 } from '@/config/ep04-part2-production-config';
 import { cn } from '@/lib/utils';
 
-// ─── Scene metadata ─────────────────────────────────────────────────────────
+// ─── Character avatar imports (Part 2 — generated from EP04_PART2_AVATAR_CONFIG.pixarPrompt) ──
+import atlasAvatar    from '@/assets/characters/ep04-part2/atlas.png';
+import novaAvatar     from '@/assets/characters/ep04-part2/nova.png';
+import hostAvatar     from '@/assets/characters/ep04-part2/host.png';
+import allaudinAvatar from '@/assets/characters/ep04-part2/allaudin.png';
+import squirrelAvatar from '@/assets/characters/ep04-part2/squirrel.png';
+import owlAvatar      from '@/assets/characters/ep04-part2/owl.png';
+import reelAvatar     from '@/assets/characters/ep04-part2/reel.png';
+import maestroAvatar  from '@/assets/characters/ep04-part2/maestro.png';
+import forgeAvatar    from '@/assets/characters/ep04-part2/forge.png';
 
-const SCENE_TITLES: Record<string, string> = {
-  [P2_SCENES.COLD_OPEN]: 'Scene 0 — Cold Open · What You\'re About to See',
-  [P2_SCENES.RECAP]: 'Scene 1 — Recap · The Story So Far',
-  [P2_SCENES.NOVA_FAREWELL]: 'Scene 2 — Nova\'s Farewell',
-  [P2_SCENES.ATLAS_SOLO]: 'Scene 3 — Atlas Flies Solo',
-  [P2_SCENES.JSON2VIDEO_DEATH]: 'Scene 4 — json2video Dies',
-  [P2_SCENES.PRODUCTION_HELL]: 'Scene 5 — Production Hell',
-  [P2_SCENES.MODEL_CRISIS]: 'Scene 6 — The Model Crisis',
-  [P2_SCENES.PROVIDER_STACK]: 'Scene 7 — The 19-Provider Stack',
-  [P2_SCENES.CHARACTERS_SPEAK]: 'Scene 8 — Characters Come Alive',
-  [P2_SCENES.PIPELINE_LIVE]: 'Scene 9 — Pipeline Goes Live',
-  [P2_SCENES.THIRTY_MINUTES]: 'Scene 10 — 30 Minutes of AI',
-  [P2_SCENES.META_MOMENT]: 'Scene 11 — The Meta Moment',
-  [P2_SCENES.DIFFERENT_PODCAST]: 'Scene 12 — A Different Kind of Podcast',
-  [P2_SCENES.IMAGINATION]: 'Scene 13 — What If We Could Imagine?',
-  [P2_SCENES.RETRO_CTA]: 'Scene 14 — Retro & CTA',
-  [P2_SCENES.FINALE]: 'Scene 15 — Finale · The End... For Now',
+/** Single source of truth for avatar lookup. Keys MUST match EP04_PART2_VOICES keys. */
+const AVATAR_MAP: Record<string, string> = {
+  atlas:    atlasAvatar,
+  nova:     novaAvatar,
+  host:     hostAvatar,
+  allaudin: allaudinAvatar,
+  squirrel: squirrelAvatar,
+  owl:      owlAvatar,
+  reel:     reelAvatar,
+  maestro:  maestroAvatar,
+  forge:    forgeAvatar,
 };
 
 const SCENE_ORDER = Object.values(P2_SCENES);
-
-// ─── Voice → display color (visual differentiation per character) ────────────
-
-const VOICE_COLORS: Record<string, string> = {
-  host:     'bg-amber-500/15 text-amber-600 border-amber-500/30',
-  atlas:    'bg-sky-500/15 text-sky-600 border-sky-500/30',
-  nova:     'bg-rose-500/15 text-rose-600 border-rose-500/30',
-  squirrel: 'bg-orange-500/15 text-orange-600 border-orange-500/30',
-  allaudin: 'bg-violet-500/15 text-violet-600 border-violet-500/30',
-  owl:      'bg-emerald-500/15 text-emerald-600 border-emerald-500/30',
-  reel:     'bg-pink-500/15 text-pink-600 border-pink-500/30',
-  maestro:  'bg-indigo-500/15 text-indigo-600 border-indigo-500/30',
-  forge:    'bg-red-500/15 text-red-600 border-red-500/30',
-};
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -190,14 +181,14 @@ export default function EP04Part2Production() {
     const grp = sceneGroups.get(sceneKey);
     if (!grp) return;
     const lines = [...grp.dialogue, ...grp.bridges];
-    toast.info(`Generating ${lines.length} lines for ${SCENE_TITLES[sceneKey]}...`);
+    toast.info(`Generating ${lines.length} lines for ${EP04_PART2_SCENE_TITLES[sceneKey]}...`);
     for (const [k, l] of lines) {
       if (statusMap[k] === 'done') continue;
       // sequential to avoid hammering the edge function
       // eslint-disable-next-line no-await-in-loop
       await generateLine(k, l);
     }
-    toast.success(`Scene complete: ${SCENE_TITLES[sceneKey]}`);
+    toast.success(`Scene complete: ${EP04_PART2_SCENE_TITLES[sceneKey]}`);
   }, [sceneGroups, statusMap, generateLine]);
 
   // ─── Render helpers ───────────────────────────────────────────────────────
@@ -205,66 +196,89 @@ export default function EP04Part2Production() {
   const renderLine = (key: string, line: Part2ScriptLine, isBridge = false) => {
     const status = statusMap[key] || 'idle';
     const audio = audioMap[key];
-    const voiceClass = VOICE_COLORS[line.voice] || 'bg-muted text-foreground border-border';
+    const voiceClass = EP04_PART2_VOICE_BADGE_CLASSES[line.voice] || 'bg-muted text-foreground border-border';
     const isPlaying = playingKey === key;
+
+    const avatarSrc = AVATAR_MAP[line.voice];
 
     return (
       <div
         key={key}
         className={cn(
-          'rounded-lg border p-3 space-y-2 transition-colors',
+          'rounded-lg border p-3 transition-colors flex gap-3',
           isBridge ? 'bg-muted/30 border-dashed' : 'bg-card',
         )}
       >
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Badge variant="outline" className={cn('font-mono text-[10px]', voiceClass)}>
-              {line.voice}
-            </Badge>
-            {isBridge && (
-              <Badge variant="outline" className="text-[10px] bg-violet-500/10 text-violet-600 border-violet-500/30">
-                bridge · {line.scene}
-              </Badge>
+        {/* Character avatar (config-driven via AVATAR_MAP) */}
+        {avatarSrc ? (
+          <img
+            src={avatarSrc}
+            alt={`${line.voice} character avatar`}
+            loading="lazy"
+            width={48}
+            height={48}
+            className={cn(
+              'h-12 w-12 rounded-full object-cover flex-shrink-0 border-2 ring-2 ring-background',
+              isBridge ? 'border-violet-500/40' : 'border-border',
             )}
-            <span className="font-mono text-[10px] text-muted-foreground">{key}</span>
-            {line.duration_est && (
-              <span className="text-[10px] text-muted-foreground">~{line.duration_est}s</span>
-            )}
+          />
+        ) : (
+          <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center flex-shrink-0 text-xs font-mono text-muted-foreground">
+            {line.voice.slice(0, 2)}
           </div>
-          <div className="flex items-center gap-1">
-            {status === 'generating' && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
-            {status === 'done' && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />}
-            {status === 'error' && <AlertCircle className="h-3.5 w-3.5 text-destructive" />}
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-7 px-2"
-              disabled={status === 'generating'}
-              onClick={() => generateLine(key, line)}
-            >
-              <Mic className="h-3.5 w-3.5 mr-1" />
-              {status === 'done' ? 'Regen' : 'Gen'}
-            </Button>
-            {audio && (
+        )}
+
+        <div className="flex-1 min-w-0 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge variant="outline" className={cn('font-mono text-[10px]', voiceClass)}>
+                {line.voice}
+              </Badge>
+              {isBridge && (
+                <Badge variant="outline" className="text-[10px] bg-violet-500/10 text-violet-600 border-violet-500/30">
+                  bridge · {line.scene}
+                </Badge>
+              )}
+              <span className="font-mono text-[10px] text-muted-foreground">{key}</span>
+              {line.duration_est && (
+                <span className="text-[10px] text-muted-foreground">~{line.duration_est}s</span>
+              )}
+            </div>
+            <div className="flex items-center gap-1">
+              {status === 'generating' && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+              {status === 'done' && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />}
+              {status === 'error' && <AlertCircle className="h-3.5 w-3.5 text-destructive" />}
               <Button
                 size="sm"
                 variant="ghost"
                 className="h-7 px-2"
-                onClick={() => isPlaying ? stopPlayback() : playLine(key)}
+                disabled={status === 'generating'}
+                onClick={() => generateLine(key, line)}
               >
-                {isPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+                <Mic className="h-3.5 w-3.5 mr-1" />
+                {status === 'done' ? 'Regen' : 'Gen'}
               </Button>
-            )}
+              {audio && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 px-2"
+                  onClick={() => isPlaying ? stopPlayback() : playLine(key)}
+                >
+                  {isPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
-        <p className={cn('text-sm leading-relaxed', isBridge && 'italic text-muted-foreground')}>
-          {line.text}
-        </p>
-        {line.direction && (
-          <p className="text-[11px] text-muted-foreground border-l-2 border-muted pl-2">
-            <span className="font-semibold">Direction:</span> {line.direction}
+          <p className={cn('text-sm leading-relaxed', isBridge && 'italic text-muted-foreground')}>
+            {line.text}
           </p>
-        )}
+          {line.direction && (
+            <p className="text-[11px] text-muted-foreground border-l-2 border-muted pl-2">
+              <span className="font-semibold">Direction:</span> {line.direction}
+            </p>
+          )}
+        </div>
       </div>
     );
   };
@@ -325,7 +339,7 @@ export default function EP04Part2Production() {
                 <div className="flex items-center justify-between gap-3 sticky top-[65px] z-20 bg-background/95 backdrop-blur py-2">
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="font-mono">#{idx}</Badge>
-                    <h2 className="text-base font-semibold">{SCENE_TITLES[sceneKey]}</h2>
+                    <h2 className="text-base font-semibold">{EP04_PART2_SCENE_TITLES[sceneKey]}</h2>
                     <Badge variant="secondary" className="text-[10px]">
                       {grp.dialogue.length} lines
                       {grp.bridges.length > 0 && ` · ${grp.bridges.length} bridge`}
@@ -345,7 +359,7 @@ export default function EP04Part2Production() {
                 {trans && idx < SCENE_ORDER.length - 1 && (
                   <div className="ml-2 mt-2 p-3 rounded-md bg-violet-500/5 border border-violet-500/20">
                     <p className="text-[11px] uppercase tracking-wider text-violet-600 mb-1">
-                      Transition → {SCENE_TITLES[(trans as any).to] || (trans as any).to}
+                      Transition → {EP04_PART2_SCENE_TITLES[(trans as any).to] || (trans as any).to}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       Style: <span className="font-mono">{(trans as any).style || 'dissolve'}</span>
