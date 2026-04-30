@@ -308,7 +308,7 @@ export default function EP04Part2Production() {
               <CardContent className="py-4">
                 <p className="text-xs uppercase tracking-wider text-amber-600 mb-1">Storybook Opening</p>
                 <p className="text-sm text-muted-foreground">
-                  {(EP04_PART2_STORYBOOK_BOOKENDS.opening as any[]).length} animated steps · pre-roll bookend
+                  {(EP04_PART2_STORYBOOK_BOOKENDS.opening as readonly any[]).length} animated steps · pre-roll bookend
                 </p>
               </CardContent>
             </Card>
@@ -365,7 +365,7 @@ export default function EP04Part2Production() {
               <CardContent className="py-4">
                 <p className="text-xs uppercase tracking-wider text-violet-600 mb-1">Storybook Closing</p>
                 <p className="text-sm text-muted-foreground">
-                  {(EP04_PART2_STORYBOOK_BOOKENDS.closing as any[]).length} animated steps · the end... for now
+                  {(EP04_PART2_STORYBOOK_BOOKENDS.closing as readonly any[]).length} animated steps · the end... for now
                 </p>
               </CardContent>
             </Card>
