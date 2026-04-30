@@ -375,9 +375,10 @@ export default function EP04Part2Production() {
               Cast
             </Button>
             <div>
-              <h1 className="text-lg font-bold leading-tight">EP04 Part 2 — The Production</h1>
+              <p className="text-[10px] text-primary font-semibold uppercase tracking-[0.2em] leading-tight">Beyond AI Hype — Episode 2 · Part 2</p>
+              <h1 className="text-lg font-bold leading-tight">Two AI Developers. One Human PO. The Production.</h1>
               <p className="text-xs text-muted-foreground">
-                16 scenes · 9 voices · {totalLines} lines · ~30 min
+                Continuation of Part 1 · 16 scenes · 9 voices · {totalLines} lines · ~30 min
               </p>
             </div>
           </div>
