@@ -414,30 +414,68 @@ export default function EP04Part2Production() {
             const interactions = EP04_PART2_CHARACTER_INTERACTIONS.find(i => i.sceneId === sceneKey);
             const scrolls = EP04_PART2_NARRATOR_SCROLLS.find(s => s.sceneId === sceneKey);
 
+            // Group dialogue by character (Pixar cast roster for this scene)
+            const dialogueByChar = new Map<string, Array<[string, Part2ScriptLine]>>();
+            for (const [k, l] of grp.dialogue) {
+              if (!dialogueByChar.has(l.voice)) dialogueByChar.set(l.voice, []);
+              dialogueByChar.get(l.voice)!.push([k, l]);
+            }
+            const castRoster = Array.from(dialogueByChar.keys());
+
+            const sceneStatus = (() => {
+              const all = [...grp.dialogue, ...grp.bridges];
+              if (all.length === 0) return { done: 0, total: 0 };
+              const done = all.filter(([k]) => statusMap[k] === 'done').length;
+              return { done, total: all.length };
+            })();
+
             return (
-              <section key={sceneKey} className="space-y-3">
-                {/* Pixar still hero — scene background */}
+              <section key={sceneKey} className="space-y-4 rounded-2xl border border-border/60 bg-card/30 p-3 md:p-4 shadow-sm">
+                {/* ═══ 1. SCENE HERO — Pixar still + title + scene controls ═══ */}
                 {bgSrc && (
-                  <div className="relative overflow-hidden rounded-xl border border-border shadow-lg">
+                  <div className="relative overflow-hidden rounded-xl border border-border shadow-md">
                     <img
                       src={bgSrc}
                       alt={`${EP04_PART2_SCENE_TITLES[sceneKey]} — Pixar scene still`}
                       loading="lazy"
-                      className="w-full h-48 md:h-64 object-cover"
+                      className="w-full h-52 md:h-72 object-cover"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/40 to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between gap-3">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Badge variant="outline" className="font-mono bg-background/80 backdrop-blur">#{idx}</Badge>
-                        <h2 className="text-base md:text-lg font-semibold drop-shadow">
+                    <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/50 to-transparent" />
+                    <div className="absolute top-3 left-3 flex items-center gap-2">
+                      <Badge variant="outline" className="font-mono bg-background/80 backdrop-blur">
+                        Scene #{idx}
+                      </Badge>
+                      <Badge variant="secondary" className="text-[10px] bg-background/80 backdrop-blur">
+                        {sceneStatus.done}/{sceneStatus.total} ready
+                      </Badge>
+                    </div>
+                    <div className="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between gap-3 flex-wrap">
+                      <div className="space-y-1 max-w-[70%]">
+                        <h2 className="text-base md:text-xl font-bold drop-shadow leading-tight">
                           {EP04_PART2_SCENE_TITLES[sceneKey]}
                         </h2>
-                        <Badge variant="secondary" className="text-[10px]">
-                          {grp.dialogue.length} lines
-                          {grp.bridges.length > 0 && ` · ${grp.bridges.length} bridge`}
-                        </Badge>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge variant="secondary" className="text-[10px]">
+                            {grp.dialogue.length} lines
+                          </Badge>
+                          {grp.bridges.length > 0 && (
+                            <Badge variant="outline" className="text-[10px] bg-violet-500/20 text-violet-100 border-violet-400/40">
+                              {grp.bridges.length} bridge
+                            </Badge>
+                          )}
+                          {castRoster.length > 0 && (
+                            <Badge variant="outline" className="text-[10px] bg-background/80 backdrop-blur">
+                              {castRoster.length} character{castRoster.length > 1 ? 's' : ''}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
-                      <Button size="sm" variant="outline" className="bg-background/80 backdrop-blur" onClick={() => generateAllInScene(sceneKey)}>
+                      <Button
+                        size="sm"
+                        variant="default"
+                        className="bg-background/90 text-foreground hover:bg-background backdrop-blur shadow-lg"
+                        onClick={() => generateAllInScene(sceneKey)}
+                      >
                         <Mic className="h-3.5 w-3.5 mr-1.5" />
                         Generate scene
                       </Button>
@@ -445,7 +483,36 @@ export default function EP04Part2Production() {
                   </div>
                 )}
 
-                {/* Narrator scroll cards (parchment data reveals) */}
+                {/* ═══ 2. CAST ROSTER — character avatars in this scene ═══ */}
+                {castRoster.length > 0 && (
+                  <div className="flex items-center gap-2 px-1 overflow-x-auto pb-1">
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold flex-shrink-0">
+                      Cast:
+                    </span>
+                    {castRoster.map(voice => {
+                      const src = AVATAR_MAP[voice];
+                      const cls = EP04_PART2_VOICE_BADGE_CLASSES[voice] || 'bg-muted border-border';
+                      const lineCount = dialogueByChar.get(voice)?.length ?? 0;
+                      return (
+                        <div key={voice} className="flex items-center gap-1.5 flex-shrink-0 rounded-full border border-border bg-background/60 pl-1 pr-2.5 py-1">
+                          {src ? (
+                            <img src={src} alt={`${voice} avatar`} loading="lazy" width={24} height={24} className="h-6 w-6 rounded-full object-cover" />
+                          ) : (
+                            <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-[9px] font-mono">
+                              {voice.slice(0, 2)}
+                            </div>
+                          )}
+                          <Badge variant="outline" className={cn('font-mono text-[10px] border-0 px-1', cls)}>
+                            {voice}
+                          </Badge>
+                          <span className="text-[10px] text-muted-foreground font-mono">{lineCount}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* ═══ 3. NARRATOR SCROLL — parchment data reveal ═══ */}
                 {scrolls && scrolls.steps.length > 0 && (
                   <div className="rounded-md border border-amber-500/30 bg-gradient-to-r from-amber-500/10 to-amber-500/5 p-3 space-y-1">
                     <p className="text-[11px] uppercase tracking-wider text-amber-600 font-semibold">
@@ -460,20 +527,56 @@ export default function EP04Part2Production() {
                   </div>
                 )}
 
-                {/* Character interaction cards (Pixar group/duo shots) */}
+                {/* ═══ 4. DIALOGUE — grouped by character ═══ */}
+                {castRoster.length > 0 && (
+                  <div className="space-y-3">
+                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold px-1">
+                      🎙️ Dialogue · grouped by character
+                    </p>
+                    {castRoster.map(voice => {
+                      const lines = dialogueByChar.get(voice) ?? [];
+                      const src = AVATAR_MAP[voice];
+                      const cls = EP04_PART2_VOICE_BADGE_CLASSES[voice] || 'bg-muted border-border';
+                      return (
+                        <div key={voice} className="rounded-lg border border-border/60 bg-background/40 overflow-hidden">
+                          <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 border-b border-border/60">
+                            {src && (
+                              <img src={src} alt={`${voice} avatar`} loading="lazy" width={28} height={28} className="h-7 w-7 rounded-full object-cover ring-2 ring-background" />
+                            )}
+                            <Badge variant="outline" className={cn('font-mono text-[10px]', cls)}>
+                              {voice}
+                            </Badge>
+                            <span className="text-[10px] text-muted-foreground font-mono">{lines.length} line{lines.length > 1 ? 's' : ''}</span>
+                          </div>
+                          <div className="p-2 space-y-2">
+                            {lines.map(([k, l]) => renderLine(k, l, false))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* ═══ 5. CHARACTER INTERACTION — Pixar group/duo shot ═══ */}
                 {interactions && interactions.steps.length > 0 && (
                   <div className="rounded-md border border-cyan-500/30 bg-gradient-to-r from-cyan-500/10 to-cyan-500/5 p-3 space-y-2">
                     <p className="text-[11px] uppercase tracking-wider text-cyan-600 font-semibold">
                       🎭 Character Interaction · {interactions.steps.length} shot{interactions.steps.length > 1 ? 's' : ''}
                     </p>
                     {interactions.steps.map((s: any, i: number) => (
-                      <div key={i} className="space-y-1">
+                      <div key={i} className="space-y-1.5">
                         <div className="flex items-center gap-1 flex-wrap">
-                          {(s.characters || []).map((c: string) => (
-                            <Badge key={c} variant="outline" className="text-[10px] font-mono">
-                              {c}
-                            </Badge>
-                          ))}
+                          {(s.characters || []).map((c: string) => {
+                            const src = AVATAR_MAP[c];
+                            return (
+                              <div key={c} className="flex items-center gap-1 rounded-full bg-background/60 border border-border pl-0.5 pr-2 py-0.5">
+                                {src && (
+                                  <img src={src} alt={`${c} avatar`} loading="lazy" width={18} height={18} className="h-[18px] w-[18px] rounded-full object-cover" />
+                                )}
+                                <span className="text-[10px] font-mono">{c}</span>
+                              </div>
+                            );
+                          })}
                           {s.style && (
                             <Badge variant="secondary" className="text-[10px]">{s.style}</Badge>
                           )}
@@ -484,13 +587,23 @@ export default function EP04Part2Production() {
                   </div>
                 )}
 
-                <div className="space-y-2 pl-2 border-l-2 border-muted">
-                  {grp.dialogue.map(([k, l]) => renderLine(k, l, false))}
-                  {grp.bridges.map(([k, l]) => renderLine(k, l, true))}
-                </div>
+                {/* ═══ 6. BRIDGES — narrator scene-bridge dialogue ═══ */}
+                {grp.bridges.length > 0 && (
+                  <div className="rounded-lg border border-violet-500/30 bg-violet-500/5 overflow-hidden">
+                    <div className="px-3 py-2 bg-violet-500/10 border-b border-violet-500/20">
+                      <p className="text-[11px] uppercase tracking-wider text-violet-600 font-semibold">
+                        🌉 Scene Bridges · {grp.bridges.length}
+                      </p>
+                    </div>
+                    <div className="p-2 space-y-2">
+                      {grp.bridges.map(([k, l]) => renderLine(k, l, true))}
+                    </div>
+                  </div>
+                )}
 
+                {/* ═══ 7. TRANSITION → next scene ═══ */}
                 {trans && idx < SCENE_ORDER.length - 1 && (
-                  <div className="ml-2 mt-2 rounded-md overflow-hidden border border-violet-500/20 bg-violet-500/5">
+                  <div className="rounded-md overflow-hidden border border-violet-500/20 bg-violet-500/5">
                     {transBgSrc && (
                       <img
                         src={transBgSrc}
@@ -500,8 +613,8 @@ export default function EP04Part2Production() {
                       />
                     )}
                     <div className="p-3">
-                      <p className="text-[11px] uppercase tracking-wider text-violet-600 mb-1">
-                        Transition → {EP04_PART2_SCENE_TITLES[(trans as any).to] || (trans as any).to}
+                      <p className="text-[11px] uppercase tracking-wider text-violet-600 mb-1 font-semibold">
+                        ➡️ Transition → {EP04_PART2_SCENE_TITLES[(trans as any).to] || (trans as any).to}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         Style: <span className="font-mono">{(trans as any).style || 'dissolve'}</span>
@@ -510,8 +623,6 @@ export default function EP04Part2Production() {
                     </div>
                   </div>
                 )}
-
-                {idx < SCENE_ORDER.length - 1 && <Separator className="mt-4" />}
               </section>
             );
           })}
