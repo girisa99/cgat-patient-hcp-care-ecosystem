@@ -36,6 +36,8 @@ import {
   PART2_TRANSITION_TO_SCENE,
   EP04_PART2_SCENE_TITLES,
   EP04_PART2_VOICE_BADGE_CLASSES,
+  EP04_PART2_CHARACTER_INTERACTIONS,
+  EP04_PART2_NARRATOR_SCROLLS,
   resolvePart2VoiceWithFallback,
 } from '@/config/ep04-part2-production-config';
 import { cn } from '@/lib/utils';
@@ -51,6 +53,41 @@ import reelAvatar     from '@/assets/characters/ep04-part2/reel.png';
 import maestroAvatar  from '@/assets/characters/ep04-part2/maestro.png';
 import forgeAvatar    from '@/assets/characters/ep04-part2/forge.png';
 
+// ─── Scene background imports (16 Pixar-style stills) ──
+import scene0Bg  from '@/assets/scenes/ep04-part2/scene-0-cold-open.png';
+import scene1Bg  from '@/assets/scenes/ep04-part2/scene-1-recap.png';
+import scene2Bg  from '@/assets/scenes/ep04-part2/scene-2-nova-farewell.png';
+import scene3Bg  from '@/assets/scenes/ep04-part2/scene-3-atlas-solo.png';
+import scene4Bg  from '@/assets/scenes/ep04-part2/scene-4-json2video-death.png';
+import scene5Bg  from '@/assets/scenes/ep04-part2/scene-5-production-hell.png';
+import scene6Bg  from '@/assets/scenes/ep04-part2/scene-6-model-crisis.png';
+import scene7Bg  from '@/assets/scenes/ep04-part2/scene-7-provider-stack.png';
+import scene8Bg  from '@/assets/scenes/ep04-part2/scene-8-characters-speak.png';
+import scene9Bg  from '@/assets/scenes/ep04-part2/scene-9-pipeline-live.png';
+import scene10Bg from '@/assets/scenes/ep04-part2/scene-10-thirty-minutes.png';
+import scene11Bg from '@/assets/scenes/ep04-part2/scene-11-meta-moment.png';
+import scene12Bg from '@/assets/scenes/ep04-part2/scene-12-different-podcast.png';
+import scene13Bg from '@/assets/scenes/ep04-part2/scene-13-imagination.png';
+import scene14Bg from '@/assets/scenes/ep04-part2/scene-14-retro-cta.png';
+import scene15Bg from '@/assets/scenes/ep04-part2/scene-15-finale.png';
+
+// ─── Transition still imports (15 between-scene stills) ──
+import t0to1   from '@/assets/scenes/ep04-part2/transitions/t-0-to-1.png';
+import t1to2   from '@/assets/scenes/ep04-part2/transitions/t-1-to-2.png';
+import t2to3   from '@/assets/scenes/ep04-part2/transitions/t-2-to-3.png';
+import t3to4   from '@/assets/scenes/ep04-part2/transitions/t-3-to-4.png';
+import t4to5   from '@/assets/scenes/ep04-part2/transitions/t-4-to-5.png';
+import t5to6   from '@/assets/scenes/ep04-part2/transitions/t-5-to-6.png';
+import t6to7   from '@/assets/scenes/ep04-part2/transitions/t-6-to-7.png';
+import t7to8   from '@/assets/scenes/ep04-part2/transitions/t-7-to-8.png';
+import t8to9   from '@/assets/scenes/ep04-part2/transitions/t-8-to-9.png';
+import t9to10  from '@/assets/scenes/ep04-part2/transitions/t-9-to-10.png';
+import t10to11 from '@/assets/scenes/ep04-part2/transitions/t-10-to-11.png';
+import t11to12 from '@/assets/scenes/ep04-part2/transitions/t-11-to-12.png';
+import t12to13 from '@/assets/scenes/ep04-part2/transitions/t-12-to-13.png';
+import t13to14 from '@/assets/scenes/ep04-part2/transitions/t-13-to-14.png';
+import t14to15 from '@/assets/scenes/ep04-part2/transitions/t-14-to-15.png';
+
 /** Single source of truth for avatar lookup. Keys MUST match EP04_PART2_VOICES keys. */
 const AVATAR_MAP: Record<string, string> = {
   atlas:    atlasAvatar,
@@ -62,6 +99,45 @@ const AVATAR_MAP: Record<string, string> = {
   reel:     reelAvatar,
   maestro:  maestroAvatar,
   forge:    forgeAvatar,
+};
+
+/** Scene-key → background image. Keys are P2_SCENES.* values. */
+const SCENE_BG_MAP: Record<string, string> = {
+  [P2_SCENES.COLD_OPEN]:         scene0Bg,
+  [P2_SCENES.RECAP]:             scene1Bg,
+  [P2_SCENES.NOVA_FAREWELL]:     scene2Bg,
+  [P2_SCENES.ATLAS_SOLO]:        scene3Bg,
+  [P2_SCENES.JSON2VIDEO_DEATH]:  scene4Bg,
+  [P2_SCENES.PRODUCTION_HELL]:   scene5Bg,
+  [P2_SCENES.MODEL_CRISIS]:      scene6Bg,
+  [P2_SCENES.PROVIDER_STACK]:    scene7Bg,
+  [P2_SCENES.CHARACTERS_SPEAK]:  scene8Bg,
+  [P2_SCENES.PIPELINE_LIVE]:     scene9Bg,
+  [P2_SCENES.THIRTY_MINUTES]:    scene10Bg,
+  [P2_SCENES.META_MOMENT]:       scene11Bg,
+  [P2_SCENES.DIFFERENT_PODCAST]: scene12Bg,
+  [P2_SCENES.IMAGINATION]:       scene13Bg,
+  [P2_SCENES.RETRO_CTA]:         scene14Bg,
+  [P2_SCENES.FINALE]:            scene15Bg,
+};
+
+/** From-scene-key → transition still image (15 transitions, fromScene = key). */
+const TRANSITION_BG_MAP: Record<string, string> = {
+  [P2_SCENES.COLD_OPEN]:         t0to1,
+  [P2_SCENES.RECAP]:             t1to2,
+  [P2_SCENES.NOVA_FAREWELL]:     t2to3,
+  [P2_SCENES.ATLAS_SOLO]:        t3to4,
+  [P2_SCENES.JSON2VIDEO_DEATH]:  t4to5,
+  [P2_SCENES.PRODUCTION_HELL]:   t5to6,
+  [P2_SCENES.MODEL_CRISIS]:      t6to7,
+  [P2_SCENES.PROVIDER_STACK]:    t7to8,
+  [P2_SCENES.CHARACTERS_SPEAK]:  t8to9,
+  [P2_SCENES.PIPELINE_LIVE]:     t9to10,
+  [P2_SCENES.THIRTY_MINUTES]:    t10to11,
+  [P2_SCENES.META_MOMENT]:       t11to12,
+  [P2_SCENES.DIFFERENT_PODCAST]: t12to13,
+  [P2_SCENES.IMAGINATION]:       t13to14,
+  [P2_SCENES.RETRO_CTA]:         t14to15,
 };
 
 const SCENE_ORDER = Object.values(P2_SCENES);

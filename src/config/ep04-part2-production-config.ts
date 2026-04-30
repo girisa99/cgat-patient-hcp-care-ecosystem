@@ -1214,18 +1214,61 @@ export const PART2_TRANSITION_TO_SCENE: Record<string, string> = {
   'p2-transition-14-to-15': P2_SCENES.RETRO_CTA,
 };
 
-// Stub structures so a Part-2 production page can import them with the same
-// shape as Part 1's EP04_CHARACTER_INTERACTIONS / EP04_NARRATOR_SCROLLS.
-// Populate per-scene group/argument/scroll prompts incrementally.
+// ---------------------------------------------------------------------------
+// EP04_PART2_CHARACTER_INTERACTIONS — Pixar group/duo/crew shots per scene
+// Extracted from EP04_PART2_SCENE_PIPELINES so the page can render them as
+// dedicated cards (single source of truth — same data, presentation layer).
+// ---------------------------------------------------------------------------
 export const EP04_PART2_CHARACTER_INTERACTIONS: {
   sceneId: string;
   steps: Array<Record<string, unknown>>;
-}[] = [];
+}[] = [
+  {
+    sceneId: P2_SCENES.RECAP,
+    steps: [
+      { type: 'character-interaction', characters: ['allaudin', 'owl'], prompt: 'Allaudin glances at Owl perched on storybook edge with amused respect', style: 'pixar-3d' },
+    ],
+  },
+  {
+    sceneId: P2_SCENES.NOVA_FAREWELL,
+    steps: [
+      { type: 'character-interaction', characters: ['nova', 'atlas'], prompt: 'Nova with packed toolkit handing off to Atlas who holds a massive document', style: 'pixar-3d' },
+    ],
+  },
+  {
+    sceneId: P2_SCENES.PROVIDER_STACK,
+    steps: [
+      { type: 'character-interaction', characters: ['reel', 'maestro', 'forge'], prompt: 'Reel calls Music and Assembly — Maestro bows, Forge raises hammer. The production crew assembled.', style: 'pixar-3d' },
+    ],
+  },
+  {
+    sceneId: P2_SCENES.THIRTY_MINUTES,
+    steps: [
+      { type: 'character-interaction', characters: ['owl', 'reel', 'maestro', 'forge'], prompt: 'Owl gestures at the production crew standing together. They wave — they ARE the automated crew.', style: 'pixar-3d' },
+    ],
+  },
+  {
+    sceneId: P2_SCENES.FINALE,
+    steps: [
+      { type: 'character-interaction', characters: ['allaudin', 'host', 'atlas', 'squirrel', 'owl', 'reel', 'maestro', 'forge'], prompt: 'All 9 characters in a line. Final group shot. Each in character — Atlas with docs, Squirrel with acorns, Owl adjusting glasses, Reel with clapperboard, Maestro bowing, Forge with hammer on shoulder. Warm golden light.', style: 'pixar-3d' },
+    ],
+  },
+];
 
+// ---------------------------------------------------------------------------
+// EP04_PART2_NARRATOR_SCROLLS — parchment scroll data reveals per scene
+// ---------------------------------------------------------------------------
 export const EP04_PART2_NARRATOR_SCROLLS: {
   sceneId: string;
   steps: Array<Record<string, unknown>>;
-}[] = [];
+}[] = [
+  {
+    sceneId: P2_SCENES.RECAP,
+    steps: [
+      { type: 'narrator-scroll', prompt: 'Storybook pages flipping with painted recap scenes from Part 1 — sprint board, governance map, dashboard screenshots as watercolor paintings', duration: 8 },
+    ],
+  },
+];
 
 // ---------------------------------------------------------------------------
 // PART 2 — UI display config (single source of truth — do NOT hardcode in pages)
