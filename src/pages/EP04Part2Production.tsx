@@ -34,46 +34,37 @@ import {
   EP04_PART2_TRANSITIONS,
   EP04_PART2_STORYBOOK_BOOKENDS,
   PART2_TRANSITION_TO_SCENE,
+  EP04_PART2_SCENE_TITLES,
+  EP04_PART2_VOICE_BADGE_CLASSES,
   resolvePart2VoiceWithFallback,
 } from '@/config/ep04-part2-production-config';
 import { cn } from '@/lib/utils';
 
-// ─── Scene metadata ─────────────────────────────────────────────────────────
+// ─── Character avatar imports (Part 2 — generated from EP04_PART2_AVATAR_CONFIG.pixarPrompt) ──
+import atlasAvatar    from '@/assets/characters/ep04-part2/atlas.png';
+import novaAvatar     from '@/assets/characters/ep04-part2/nova.png';
+import hostAvatar     from '@/assets/characters/ep04-part2/host.png';
+import allaudinAvatar from '@/assets/characters/ep04-part2/allaudin.png';
+import squirrelAvatar from '@/assets/characters/ep04-part2/squirrel.png';
+import owlAvatar      from '@/assets/characters/ep04-part2/owl.png';
+import reelAvatar     from '@/assets/characters/ep04-part2/reel.png';
+import maestroAvatar  from '@/assets/characters/ep04-part2/maestro.png';
+import forgeAvatar    from '@/assets/characters/ep04-part2/forge.png';
 
-const SCENE_TITLES: Record<string, string> = {
-  [P2_SCENES.COLD_OPEN]: 'Scene 0 — Cold Open · What You\'re About to See',
-  [P2_SCENES.RECAP]: 'Scene 1 — Recap · The Story So Far',
-  [P2_SCENES.NOVA_FAREWELL]: 'Scene 2 — Nova\'s Farewell',
-  [P2_SCENES.ATLAS_SOLO]: 'Scene 3 — Atlas Flies Solo',
-  [P2_SCENES.JSON2VIDEO_DEATH]: 'Scene 4 — json2video Dies',
-  [P2_SCENES.PRODUCTION_HELL]: 'Scene 5 — Production Hell',
-  [P2_SCENES.MODEL_CRISIS]: 'Scene 6 — The Model Crisis',
-  [P2_SCENES.PROVIDER_STACK]: 'Scene 7 — The 19-Provider Stack',
-  [P2_SCENES.CHARACTERS_SPEAK]: 'Scene 8 — Characters Come Alive',
-  [P2_SCENES.PIPELINE_LIVE]: 'Scene 9 — Pipeline Goes Live',
-  [P2_SCENES.THIRTY_MINUTES]: 'Scene 10 — 30 Minutes of AI',
-  [P2_SCENES.META_MOMENT]: 'Scene 11 — The Meta Moment',
-  [P2_SCENES.DIFFERENT_PODCAST]: 'Scene 12 — A Different Kind of Podcast',
-  [P2_SCENES.IMAGINATION]: 'Scene 13 — What If We Could Imagine?',
-  [P2_SCENES.RETRO_CTA]: 'Scene 14 — Retro & CTA',
-  [P2_SCENES.FINALE]: 'Scene 15 — Finale · The End... For Now',
+/** Single source of truth for avatar lookup. Keys MUST match EP04_PART2_VOICES keys. */
+const AVATAR_MAP: Record<string, string> = {
+  atlas:    atlasAvatar,
+  nova:     novaAvatar,
+  host:     hostAvatar,
+  allaudin: allaudinAvatar,
+  squirrel: squirrelAvatar,
+  owl:      owlAvatar,
+  reel:     reelAvatar,
+  maestro:  maestroAvatar,
+  forge:    forgeAvatar,
 };
 
 const SCENE_ORDER = Object.values(P2_SCENES);
-
-// ─── Voice → display color (visual differentiation per character) ────────────
-
-const VOICE_COLORS: Record<string, string> = {
-  host:     'bg-amber-500/15 text-amber-600 border-amber-500/30',
-  atlas:    'bg-sky-500/15 text-sky-600 border-sky-500/30',
-  nova:     'bg-rose-500/15 text-rose-600 border-rose-500/30',
-  squirrel: 'bg-orange-500/15 text-orange-600 border-orange-500/30',
-  allaudin: 'bg-violet-500/15 text-violet-600 border-violet-500/30',
-  owl:      'bg-emerald-500/15 text-emerald-600 border-emerald-500/30',
-  reel:     'bg-pink-500/15 text-pink-600 border-pink-500/30',
-  maestro:  'bg-indigo-500/15 text-indigo-600 border-indigo-500/30',
-  forge:    'bg-red-500/15 text-red-600 border-red-500/30',
-};
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
