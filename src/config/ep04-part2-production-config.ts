@@ -1276,7 +1276,7 @@ export const EP04_PART2_NARRATOR_SCROLLS: {
 
 /** Human-readable scene titles. Keyed by P2_SCENES.* values. */
 export const EP04_PART2_SCENE_TITLES: Record<string, string> = {
-  [P2_SCENES.COLD_OPEN]:         'Scene 0 — Cold Open · What You\'re About to See',
+  [P2_SCENES.COLD_OPEN]:         'Scene 0 — Cold Open · "What You\'re About to See" — Host Sai & Allaudin',
   [P2_SCENES.RECAP]:             'Scene 1 — Recap · The Story So Far',
   [P2_SCENES.NOVA_FAREWELL]:     'Scene 2 — Nova\'s Farewell',
   [P2_SCENES.ATLAS_SOLO]:        'Scene 3 — Atlas Flies Solo',
