@@ -517,11 +517,13 @@ export const EP04_PART2_SCENE_PIPELINES: Record<string, Array<Record<string, unk
   'p2-scene-0-cold-open': [
     { type: 'alibaba-video', model: 'sora-2', prompt: 'Flash-forward montage: 5-second rapid cuts of most cinematic moments from later episodes — animated characters speaking, forge hammering, pipeline running, world map lighting up. Freeze frame effect at the end.', provider: 'openai' },
     { type: 'tts', voice: 'host' as EP04Part2Voice, scriptKey: 'p2-s0-host-1' },
-    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'p2-s0-host-1' },
+    // Scene 0 uses the REAL selfie for the host lipsync (matches Part 1 cold-open style).
+    // From scene 1 onward, the host reverts to the Pixar-3D portrait (host.png).
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'p2-s0-host-1', sourceImage: 'src/assets/characters/ep04-part2/host-selfie.jpg', styleNote: 'real-selfie' },
     { type: 'tts', voice: 'host' as EP04Part2Voice, scriptKey: 'p2-s0-host-2' },
-    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'p2-s0-host-2' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'p2-s0-host-2', sourceImage: 'src/assets/characters/ep04-part2/host-selfie.jpg', styleNote: 'real-selfie' },
     { type: 'tts', voice: 'host' as EP04Part2Voice, scriptKey: 'p2-s0-host-3' },
-    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'p2-s0-host-3' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'p2-s0-host-3', sourceImage: 'src/assets/characters/ep04-part2/host-selfie.jpg', styleNote: 'real-selfie' },
     { type: 'tts', voice: 'allaudin' as EP04Part2Voice, scriptKey: 'p2-s0-allaudin-1' },
     { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'p2-s0-allaudin-1' },
     { type: 'storybook-frame', variant: 'opening', prompt: 'Allaudin opens enchanted storybook. Golden light spills from pages. Chapter 2 header visible.', duration: 4 },
