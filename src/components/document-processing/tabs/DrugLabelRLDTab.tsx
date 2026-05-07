@@ -14,7 +14,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tag, AlertTriangle, CheckCircle2, Loader2, FileText, Sparkles } from 'lucide-react';
+import { Tag, AlertTriangle, CheckCircle2, Loader2, FileText, Sparkles, XCircle, MinusCircle, ShieldCheck } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { getDocumentTypeById } from '@/config/documentTypes';
@@ -43,12 +44,24 @@ interface SectionGap {
   notes?: string;
 }
 
+interface FieldVerification {
+  fieldKey: string;
+  fieldLabel: string;
+  proposedValue: string;
+  rldValue: string;
+  status: 'match' | 'mismatch' | 'missing_in_proposed' | 'missing_in_rld' | 'partial';
+  similarity: number; // 0-100
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  notes?: string;
+}
+
 interface ComparisonResult {
   summary: string;
   overallAlignment: number; // 0-100
   gaps: SectionGap[];
   missingSections: string[];
   recommendations: string[];
+  fieldVerifications?: FieldVerification[];
 }
 
 const SEVERITY_COLOR: Record<SectionGap['severity'], string> = {
@@ -104,12 +117,21 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
     setIsComparing(true);
     setComparison(null);
     try {
-      const systemPrompt = `You are an FDA labeling regulatory expert. You compare a PROPOSED drug label against the Reference Listed Drug (RLD) label.
-Identify, per FDA Physician Labeling Rule (21 CFR 201.56/57) sections:
+      const config = getDocumentTypeById('drug-label');
+      const fieldList = (config?.targetFields || []).map(f => `- ${f.key} (${f.label})`).join('\n');
+
+      const systemPrompt = `You are an FDA labeling regulatory expert performing TWO analyses on a drug label:
+
+(A) SECTION-LEVEL gap analysis per FDA Physician Labeling Rule (21 CFR 201.56/57) sections:
 1 Indications & Usage, 2 Dosage & Administration, 3 Dosage Forms & Strengths, 4 Contraindications, 5 Warnings & Precautions,
 Boxed Warning, 6 Adverse Reactions, 7 Drug Interactions, 8 Use in Specific Populations, 10 Overdosage, 11 Description,
 12 Clinical Pharmacology, 13 Nonclinical Toxicology, 14 Clinical Studies, 16 How Supplied/Storage and Handling, 17 Patient Counseling.
-For each section: status = missing | partial | divergent | aligned, plus severity = critical | high | medium | low.
+
+(B) FIELD-LEVEL TEXT VERIFICATION: for each labeling field listed below, extract the value from BOTH the PROPOSED and RLD label, compare them character/semantic-wise, and flag mismatches, missing values, or partial matches. Compute a similarity 0-100 (100 = exact text match, 90+ = semantically equivalent, <50 = clearly different).
+
+Fields to verify:
+${fieldList}
+
 Return STRICT JSON only, no prose.`;
 
       const userPrompt = `Compare the PROPOSED label against the RLD label and return JSON of shape:
@@ -120,6 +142,12 @@ Return STRICT JSON only, no prose.`;
   "gaps": [
     { "section": "string", "status": "missing|partial|divergent|aligned", "severity": "critical|high|medium|low",
       "rldExcerpt": "string (<=300 chars)", "proposedExcerpt": "string (<=300 chars)", "notes": "string" }
+  ],
+  "fieldVerifications": [
+    { "fieldKey": "string (matches the keys above)", "fieldLabel": "string",
+      "proposedValue": "string (<=400 chars, '' if not found)", "rldValue": "string (<=400 chars, '' if not found)",
+      "status": "match|mismatch|missing_in_proposed|missing_in_rld|partial",
+      "similarity": number (0-100), "severity": "critical|high|medium|low", "notes": "string" }
   ],
   "recommendations": ["string", ...]
 }
@@ -136,7 +164,7 @@ ${proposedText.slice(0, 18000)}`;
           prompt: userPrompt,
           systemPrompt,
           temperature: 0.1,
-          maxTokens: 4000,
+          maxTokens: 6000,
           action: 'generate',
         },
       });
@@ -243,6 +271,75 @@ ${proposedText.slice(0, 18000)}`;
             )}
 
             <div className="space-y-3">
+              {comparison.fieldVerifications && comparison.fieldVerifications.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-semibold flex items-center gap-2">
+                      <ShieldCheck className="h-4 w-4" /> Field-level Text Verification
+                    </h4>
+                    {(() => {
+                      const v = comparison.fieldVerifications!;
+                      const matches = v.filter(f => f.status === 'match').length;
+                      const issues = v.length - matches;
+                      return (
+                        <div className="flex gap-2 text-xs">
+                          <Badge variant="default">{matches} matched</Badge>
+                          <Badge variant="destructive">{issues} issues</Badge>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                  <div className="rounded-md border overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[18%]">Field</TableHead>
+                          <TableHead className="w-[28%]">RLD Value</TableHead>
+                          <TableHead className="w-[28%]">Proposed Value</TableHead>
+                          <TableHead className="w-[10%]">Similarity</TableHead>
+                          <TableHead className="w-[16%]">Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {comparison.fieldVerifications!.map((fv, i) => {
+                          const statusIcon =
+                            fv.status === 'match' ? <CheckCircle2 className="h-4 w-4 text-green-600" /> :
+                            fv.status === 'partial' ? <AlertTriangle className="h-4 w-4 text-yellow-500" /> :
+                            fv.status === 'mismatch' ? <XCircle className="h-4 w-4 text-destructive" /> :
+                            <MinusCircle className="h-4 w-4 text-muted-foreground" />;
+                          return (
+                            <TableRow key={i}>
+                              <TableCell className="text-xs font-medium">{fv.fieldLabel || fv.fieldKey}</TableCell>
+                              <TableCell className="text-xs whitespace-pre-wrap break-words">
+                                {fv.rldValue || <span className="text-muted-foreground italic">— not in RLD —</span>}
+                              </TableCell>
+                              <TableCell className="text-xs whitespace-pre-wrap break-words">
+                                {fv.proposedValue || <span className="text-muted-foreground italic">— missing —</span>}
+                              </TableCell>
+                              <TableCell className="text-xs">
+                                <Badge variant={fv.similarity >= 90 ? 'default' : fv.similarity >= 50 ? 'secondary' : 'destructive'}>
+                                  {fv.similarity}%
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-xs">
+                                <div className="flex flex-col gap-1">
+                                  <div className="flex items-center gap-1">
+                                    {statusIcon}
+                                    <span className="capitalize">{fv.status.replace(/_/g, ' ')}</span>
+                                  </div>
+                                  <Badge className={SEVERITY_COLOR[fv.severity]} variant="outline">{fv.severity}</Badge>
+                                  {fv.notes && <span className="text-muted-foreground">{fv.notes}</span>}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              )}
+
               <h4 className="text-sm font-semibold">Section-by-section findings</h4>
               {comparison.gaps?.map((gap, i) => (
                 <div key={i} className="rounded-md border p-3 space-y-2">
