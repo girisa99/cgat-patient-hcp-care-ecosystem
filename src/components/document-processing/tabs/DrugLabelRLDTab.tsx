@@ -7,7 +7,7 @@
  * Uses ai-universal-processor (no hardcoded model — provider-only routing).
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -165,15 +165,22 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
   };
 
 
-  const runComparison = async () => {
+  const lastComparedRef = useRef<string>('');
+  const autoTimerRef = useRef<number | null>(null);
+
+  const runComparison = useCallback(async (silent = false) => {
     if (!proposedText.trim()) {
-      toast.error('Process a drug label first to populate the proposed label.');
+      if (!silent) toast.error('Process a drug label first to populate the proposed label.');
       return;
     }
     if (rldText.trim().length < 50) {
-      toast.error('Paste the Reference Listed Drug (RLD) label text first.');
+      if (!silent) toast.error('Paste or upload the Reference Listed Drug (RLD) label first.');
       return;
     }
+
+    const signature = `${proposedText.length}:${rldText.length}:${proposedText.slice(0, 80)}|${rldText.slice(0, 80)}`;
+    if (silent && signature === lastComparedRef.current) return;
+    lastComparedRef.current = signature;
 
     setIsComparing(true);
     setComparison(null);
@@ -238,14 +245,30 @@ ${proposedText.slice(0, 18000)}`;
 
       const parsed: ComparisonResult = JSON.parse(jsonMatch[0]);
       setComparison(parsed);
-      toast.success(`Comparison complete — ${parsed.gaps?.length ?? 0} findings`);
+      const matched = parsed.fieldVerifications?.filter(f => f.status === 'match').length ?? 0;
+      const issues = (parsed.fieldVerifications?.length ?? 0) - matched;
+      toast.success(`Comparison complete — ${matched} matched, ${issues} to review`);
     } catch (err: any) {
       console.error('RLD comparison error:', err);
-      toast.error(err?.message || 'Comparison failed');
+      if (!silent) toast.error(err?.message || 'Comparison failed');
+      lastComparedRef.current = ''; // allow retry
     } finally {
       setIsComparing(false);
     }
-  };
+  }, [proposedText, rldText]);
+
+  // Auto-run comparison whenever both inputs are populated and stable for 800ms
+  useEffect(() => {
+    if (!proposedText.trim() || rldText.trim().length < 50) return;
+    if (isComparing) return;
+    if (autoTimerRef.current) window.clearTimeout(autoTimerRef.current);
+    autoTimerRef.current = window.setTimeout(() => {
+      runComparison(true);
+    }, 800);
+    return () => {
+      if (autoTimerRef.current) window.clearTimeout(autoTimerRef.current);
+    };
+  }, [proposedText, rldText, isComparing, runComparison]);
 
   return (
     <div className="space-y-4">
@@ -332,7 +355,7 @@ ${proposedText.slice(0, 18000)}`;
 
           <div className="flex justify-end">
             <Button
-              onClick={runComparison}
+              onClick={() => { lastComparedRef.current = ''; runComparison(false); }}
               disabled={isComparing || !proposedText || rldText.trim().length < 50}
             >
               {isComparing ? (
