@@ -281,6 +281,8 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
 
   const ocrFile = async (file: File): Promise<string> => {
     const dataUrl = await fileToBase64(file);
+    // Gemini Vision requires RAW base64, not a data: URL — strip the prefix
+    const rawBase64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
     const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
       body: {
         provider: 'gemini',
@@ -289,7 +291,7 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
         systemPrompt: 'You are an OCR engine specialized in pharmaceutical labels. Return only extracted text.',
         temperature: 0,
         maxTokens: 8000,
-        context: { image: dataUrl },
+        context: { image: rawBase64 },
       },
     });
     if (error) throw new Error(error.message);
@@ -301,6 +303,7 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
   // Structured field extractor — pulls each FDA target field out of an image into its own value
   const extractStructuredFields = async (file: File): Promise<Record<string, string>> => {
     const dataUrl = await fileToBase64(file);
+    const rawBase64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
     const fieldList = targetFields.map(f => `"${f.key}" (${f.label})`).join(', ');
     const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
       body: {
