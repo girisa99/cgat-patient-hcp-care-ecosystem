@@ -289,6 +289,14 @@ ${proposedText.slice(0, 18000)}`;
                       );
                     })()}
                   </div>
+                  <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                    <span className="text-muted-foreground">Legend:</span>
+                    <span className="px-2 py-0.5 rounded bg-green-100 dark:bg-green-950/40 border border-green-300 dark:border-green-800">Match</span>
+                    <span className="px-2 py-0.5 rounded bg-yellow-100 dark:bg-yellow-950/40 border border-yellow-300 dark:border-yellow-800">Partial</span>
+                    <span className="px-2 py-0.5 rounded bg-red-100 dark:bg-red-950/40 border border-red-300 dark:border-red-800">Mismatch</span>
+                    <span className="px-2 py-0.5 rounded bg-orange-100 dark:bg-orange-950/40 border border-orange-300 dark:border-orange-800">Missing in proposed</span>
+                    <span className="px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950/40 border border-blue-300 dark:border-blue-800">Missing in RLD</span>
+                  </div>
                   <div className="rounded-md border overflow-x-auto">
                     <Table>
                       <TableHeader>
