@@ -307,14 +307,23 @@ ${proposedText.slice(0, 18000)}`;
                             fv.status === 'partial' ? <AlertTriangle className="h-4 w-4 text-yellow-500" /> :
                             fv.status === 'mismatch' ? <XCircle className="h-4 w-4 text-destructive" /> :
                             <MinusCircle className="h-4 w-4 text-muted-foreground" />;
+                          // Row-level highlight by status
+                          const rowClass =
+                            fv.status === 'match' ? 'bg-green-50 dark:bg-green-950/30 hover:bg-green-100/70 dark:hover:bg-green-950/50' :
+                            fv.status === 'partial' ? 'bg-yellow-50 dark:bg-yellow-950/30 hover:bg-yellow-100/70 dark:hover:bg-yellow-950/50' :
+                            fv.status === 'mismatch' ? 'bg-red-50 dark:bg-red-950/30 hover:bg-red-100/70 dark:hover:bg-red-950/50' :
+                            fv.status === 'missing_in_proposed' ? 'bg-orange-50 dark:bg-orange-950/30 hover:bg-orange-100/70 dark:hover:bg-orange-950/50' :
+                            'bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100/70 dark:hover:bg-blue-950/50';
+                          const missingProposed = !fv.proposedValue || fv.status === 'missing_in_proposed';
+                          const missingRld = !fv.rldValue || fv.status === 'missing_in_rld';
                           return (
-                            <TableRow key={i}>
+                            <TableRow key={i} className={rowClass}>
                               <TableCell className="text-xs font-medium">{fv.fieldLabel || fv.fieldKey}</TableCell>
-                              <TableCell className="text-xs whitespace-pre-wrap break-words">
-                                {fv.rldValue || <span className="text-muted-foreground italic">— not in RLD —</span>}
+                              <TableCell className={`text-xs whitespace-pre-wrap break-words ${missingRld ? 'bg-blue-100/60 dark:bg-blue-900/40' : ''}`}>
+                                {fv.rldValue || <span className="text-blue-700 dark:text-blue-300 italic font-semibold">— not in RLD —</span>}
                               </TableCell>
-                              <TableCell className="text-xs whitespace-pre-wrap break-words">
-                                {fv.proposedValue || <span className="text-muted-foreground italic">— missing —</span>}
+                              <TableCell className={`text-xs whitespace-pre-wrap break-words ${missingProposed ? 'bg-orange-100/60 dark:bg-orange-900/40' : ''}`}>
+                                {fv.proposedValue || <span className="text-orange-700 dark:text-orange-300 italic font-semibold">⚠ MISSING in proposed</span>}
                               </TableCell>
                               <TableCell className="text-xs">
                                 <Badge variant={fv.similarity >= 90 ? 'default' : fv.similarity >= 50 ? 'secondary' : 'destructive'}>
@@ -325,7 +334,7 @@ ${proposedText.slice(0, 18000)}`;
                                 <div className="flex flex-col gap-1">
                                   <div className="flex items-center gap-1">
                                     {statusIcon}
-                                    <span className="capitalize">{fv.status.replace(/_/g, ' ')}</span>
+                                    <span className="capitalize font-medium">{fv.status.replace(/_/g, ' ')}</span>
                                   </div>
                                   <Badge className={SEVERITY_COLOR[fv.severity]} variant="outline">{fv.severity}</Badge>
                                   {fv.notes && <span className="text-muted-foreground">{fv.notes}</span>}
