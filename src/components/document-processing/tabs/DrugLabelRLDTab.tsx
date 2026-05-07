@@ -28,8 +28,24 @@ interface ExtractedField {
 interface ProcessingResult {
   fileName?: string;
   rawText?: string;
+  imageUrl?: string;
   extractedFields?: Record<string, ExtractedField | any>;
 }
+
+const getFieldValue = (raw: any): string => {
+  if (raw === undefined || raw === null) return '';
+  if (typeof raw === 'object' && 'value' in raw) {
+    const v = (raw as any).value;
+    if (v === undefined || v === null) return '';
+    return typeof v === 'string' ? v : (() => { try { return JSON.stringify(v); } catch { return String(v); } })();
+  }
+  return typeof raw === 'string' ? raw : (() => { try { return JSON.stringify(raw); } catch { return String(raw); } })();
+};
+
+const getFieldConfidence = (raw: any): number | undefined => {
+  if (raw && typeof raw === 'object' && 'confidence' in raw) return (raw as any).confidence;
+  return undefined;
+};
 
 interface Props {
   processingResult: ProcessingResult | null;
