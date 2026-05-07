@@ -453,84 +453,141 @@ ${proposedText.slice(0, 18000)}`;
               )}
             </AlertDescription>
           </Alert>
+          {/* Document preview from extraction */}
+          {processingResult?.imageUrl && (
+            <div className="rounded-md border bg-muted/30 p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4" /> Source Document Preview
+                  <Badge variant="outline" className="text-[10px]">{processingResult.fileName || 'document'}</Badge>
+                </span>
+              </div>
+              <div className="flex justify-center bg-background rounded p-2 max-h-72 overflow-auto">
+                <img
+                  src={processingResult.imageUrl}
+                  alt="Extracted document preview"
+                  className="max-h-64 object-contain rounded shadow-sm"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Structured side-by-side field grid */}
+          <div className="rounded-md border overflow-hidden">
+            <div className="grid grid-cols-12 bg-muted px-3 py-2 text-xs font-semibold sticky top-0 z-10 gap-2">
+              <div className="col-span-3">Field</div>
+              <div className="col-span-4 flex items-center gap-2">
+                <FileText className="h-3.5 w-3.5" /> Proposed (extracted)
+              </div>
+              <div className="col-span-4 flex items-center gap-2">
+                <ShieldCheck className="h-3.5 w-3.5" /> Reference Listed Drug (RLD)
+                <Button asChild size="sm" variant="ghost" className="h-6 px-2 ml-auto" disabled={isOcrRld}>
+                  <label className="cursor-pointer text-[10px] flex items-center">
+                    {isOcrRld ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Upload className="h-3 w-3 mr-1" />}
+                    OCR image
+                    <input type="file" accept="image/*" className="hidden"
+                      onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], 'rld')} />
+                  </label>
+                </Button>
+              </div>
+              <div className="col-span-1 text-center">Conf.</div>
+            </div>
+            <div className="divide-y max-h-[480px] overflow-y-auto">
+              {targetFields.map(tf => {
+                const p = proposedFieldValues[tf.key];
+                const rld = rldFieldValues[tf.key] || '';
+                const conf = p?.confidence;
+                const proposedFilled = !!(p?.value && p.value.trim());
+                const rldFilled = !!rld.trim();
+                return (
+                  <div key={tf.key} className="grid grid-cols-12 px-3 py-2 gap-2 text-xs items-start hover:bg-muted/40">
+                    <div className="col-span-3 font-medium pt-1.5">
+                      {tf.label}
+                      {tf.required && <span className="text-destructive ml-1">*</span>}
+                    </div>
+                    <div className="col-span-4">
+                      <Textarea
+                        value={p?.value || ''}
+                        onChange={e => setProposedFieldOverrides(s => ({ ...s, [tf.key]: e.target.value }))}
+                        placeholder={proposedFilled ? '' : '— not extracted —'}
+                        className={`min-h-[36px] text-xs font-mono ${!proposedFilled ? 'bg-orange-50 dark:bg-orange-950/20 border-orange-300' : ''}`}
+                        rows={Math.min(6, Math.max(1, Math.ceil((p?.value?.length || 0) / 60)))}
+                      />
+                    </div>
+                    <div className="col-span-4">
+                      <Textarea
+                        value={rld}
+                        onChange={e => setRldFieldValues(s => ({ ...s, [tf.key]: e.target.value }))}
+                        placeholder={rldFilled ? '' : 'Paste RLD value…'}
+                        className={`min-h-[36px] text-xs font-mono ${!rldFilled ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-300' : ''}`}
+                        rows={Math.min(6, Math.max(1, Math.ceil((rld.length || 0) / 60)))}
+                      />
+                    </div>
+                    <div className="col-span-1 flex justify-center pt-1.5">
+                      {conf !== undefined ? (
+                        <Badge variant={conf >= 0.8 ? 'default' : conf >= 0.5 ? 'secondary' : 'destructive'} className="text-[10px]">
+                          {Math.round(conf * 100)}%
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground text-[10px]">—</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Raw text fallback (collapsed by default) */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2 flex-wrap">
-                <label className="text-sm font-medium flex items-center gap-2">
-                  <FileText className="h-4 w-4" /> Proposed Label
-                </label>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">
-                    {proposedText ? `${proposedText.length} chars` : 'Empty'}
-                  </Badge>
-                  <Button asChild size="sm" variant="outline" disabled={isOcrProposed}>
-                    <label className="cursor-pointer">
-                      {isOcrProposed ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Upload className="h-3.5 w-3.5 mr-1" />}
-                      Upload image
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], 'proposed')}
-                      />
-                    </label>
-                  </Button>
-                </div>
+                <button type="button" onClick={() => setShowRawProposed(s => !s)}
+                  className="text-xs font-medium underline text-muted-foreground hover:text-foreground">
+                  {showRawProposed ? '▼' : '▶'} Raw proposed text ({proposedText.length} chars)
+                </button>
+                <Button asChild size="sm" variant="outline" disabled={isOcrProposed}>
+                  <label className="cursor-pointer">
+                    {isOcrProposed ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Upload className="h-3.5 w-3.5 mr-1" />}
+                    OCR proposed image
+                    <input type="file" accept="image/*" className="hidden"
+                      onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], 'proposed')} />
+                  </label>
+                </Button>
               </div>
-              {proposedFileName && (
-                <div className="text-[11px] text-muted-foreground flex items-center gap-1">
-                  <ImageIcon className="h-3 w-3" /> {proposedFileName}
-                </div>
+              {proposedFileName && <div className="text-[11px] text-muted-foreground">{proposedFileName}</div>}
+              {showRawProposed && (
+                <Textarea
+                  value={proposedText}
+                  onChange={e => setProposedOverride(e.target.value)}
+                  placeholder="Composite proposed text used for AI comparison…"
+                  className="h-48 font-mono text-xs"
+                />
               )}
-              <Textarea
-                value={proposedText}
-                onChange={e => setProposedOverride(e.target.value)}
-                placeholder="Proposed label text will appear here after upload, OCR, or extraction from the Upload tab. You can also paste text directly."
-                className="h-64 font-mono text-xs"
-              />
             </div>
-
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2 flex-wrap">
-                <label className="text-sm font-medium flex items-center gap-2">
-                  <FileText className="h-4 w-4" /> Reference Listed Drug (RLD) Label
-                </label>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">
-                    {rldText ? `${rldText.length} chars` : 'Empty'}
-                  </Badge>
-                  <Button asChild size="sm" variant="outline" disabled={isOcrRld}>
-                    <label className="cursor-pointer">
-                      {isOcrRld ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Upload className="h-3.5 w-3.5 mr-1" />}
-                      Upload image
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], 'rld')}
-                      />
-                    </label>
-                  </Button>
-                </div>
+                <button type="button" onClick={() => setShowRawRld(s => !s)}
+                  className="text-xs font-medium underline text-muted-foreground hover:text-foreground">
+                  {showRawRld ? '▼' : '▶'} Raw RLD text ({rldText.length} chars)
+                </button>
               </div>
-              {rldFileName && (
-                <div className="text-[11px] text-muted-foreground flex items-center gap-1">
-                  <ImageIcon className="h-3 w-3" /> {rldFileName}
-                </div>
+              {rldFileName && <div className="text-[11px] text-muted-foreground">{rldFileName}</div>}
+              {showRawRld && (
+                <Textarea
+                  value={rldText}
+                  onChange={e => setRldText(e.target.value)}
+                  placeholder="Optional full RLD label text (Prescribing Information / package insert)…"
+                  className="h-48 font-mono text-xs"
+                />
               )}
-              <Textarea
-                value={rldText}
-                onChange={e => setRldText(e.target.value)}
-                placeholder="Upload an RLD label image or paste the full FDA RLD label text here (Prescribing Information / package insert)…"
-                className="h-64 font-mono text-xs"
-              />
             </div>
           </div>
 
           <div className="flex justify-end">
             <Button
               onClick={() => { lastComparedRef.current = ''; runComparison(false); }}
-              disabled={isComparing || !proposedText || rldText.trim().length < 50}
+              disabled={isComparing || !proposedText || !rldHasContent}
             >
               {isComparing ? (
                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Comparing…</>
