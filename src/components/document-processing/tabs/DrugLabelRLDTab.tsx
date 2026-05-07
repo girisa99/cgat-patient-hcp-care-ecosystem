@@ -394,7 +394,8 @@ ${proposedText.slice(0, 18000)}`;
                     </div>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             {comparison.recommendations?.length > 0 && (
