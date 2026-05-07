@@ -13,8 +13,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tag, AlertTriangle, CheckCircle2, Loader2, FileText, Sparkles, XCircle, MinusCircle, ShieldCheck } from 'lucide-react';
+
+import { Tag, AlertTriangle, CheckCircle2, Loader2, FileText, Sparkles, XCircle, MinusCircle, ShieldCheck, Upload, Image as ImageIcon } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -97,12 +97,73 @@ const buildProposedLabelText = (result: ProcessingResult | null): string => {
   return lines.join('\n');
 };
 
+const fileToBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
 const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
   const [rldText, setRldText] = useState('');
+  const [proposedOverride, setProposedOverride] = useState('');
   const [comparison, setComparison] = useState<ComparisonResult | null>(null);
   const [isComparing, setIsComparing] = useState(false);
+  const [isOcrProposed, setIsOcrProposed] = useState(false);
+  const [isOcrRld, setIsOcrRld] = useState(false);
+  const [proposedFileName, setProposedFileName] = useState<string>('');
+  const [rldFileName, setRldFileName] = useState<string>('');
 
-  const proposedText = useMemo(() => buildProposedLabelText(processingResult), [processingResult]);
+  const extractedProposed = useMemo(() => buildProposedLabelText(processingResult), [processingResult]);
+  const proposedText = proposedOverride.trim() ? proposedOverride : extractedProposed;
+
+  const ocrFile = async (file: File): Promise<string> => {
+    const dataUrl = await fileToBase64(file);
+    const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
+      body: {
+        provider: 'gemini',
+        action: 'analyze_scene',
+        prompt: 'Extract ALL text from this drug label image verbatim. Preserve sections, headings, dosing tables, warnings, and bullet structure. Output plain text only — no commentary.',
+        systemPrompt: 'You are an OCR engine specialized in pharmaceutical labels. Return only extracted text.',
+        temperature: 0,
+        maxTokens: 8000,
+        context: { image: dataUrl },
+      },
+    });
+    if (error) throw new Error(error.message);
+    const text = (data?.content || '').trim();
+    if (!text) throw new Error('No text extracted from image');
+    return text;
+  };
+
+  const handleUpload = async (file: File, target: 'proposed' | 'rld') => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file (PNG, JPG, WEBP). For PDFs, process via the Upload tab.');
+      return;
+    }
+    const setLoading = target === 'proposed' ? setIsOcrProposed : setIsOcrRld;
+    setLoading(true);
+    try {
+      toast.info(`Reading ${target === 'proposed' ? 'proposed' : 'RLD'} label…`);
+      const text = await ocrFile(file);
+      if (target === 'proposed') {
+        setProposedOverride(text);
+        setProposedFileName(file.name);
+      } else {
+        setRldText(text);
+        setRldFileName(file.name);
+      }
+      toast.success(`Extracted ${text.length} chars from ${file.name}`);
+    } catch (err: any) {
+      console.error('OCR error:', err);
+      toast.error(err?.message || 'Failed to extract text from image');
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   const runComparison = async () => {
     if (!proposedText.trim()) {
@@ -197,29 +258,73 @@ ${proposedText.slice(0, 18000)}`;
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
                 <label className="text-sm font-medium flex items-center gap-2">
-                  <FileText className="h-4 w-4" /> Proposed Label (from extraction)
+                  <FileText className="h-4 w-4" /> Proposed Label
                 </label>
-                <Badge variant="outline">
-                  {proposedText ? `${proposedText.length} chars` : 'Empty — process a label first'}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">
+                    {proposedText ? `${proposedText.length} chars` : 'Empty'}
+                  </Badge>
+                  <Button asChild size="sm" variant="outline" disabled={isOcrProposed}>
+                    <label className="cursor-pointer">
+                      {isOcrProposed ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Upload className="h-3.5 w-3.5 mr-1" />}
+                      Upload image
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], 'proposed')}
+                      />
+                    </label>
+                  </Button>
+                </div>
               </div>
-              <ScrollArea className="h-64 rounded-md border bg-muted/30 p-3">
-                <pre className="text-xs whitespace-pre-wrap font-mono">
-                  {proposedText || 'No proposed label yet. Upload and process a drug label in the Upload tab.'}
-                </pre>
-              </ScrollArea>
+              {proposedFileName && (
+                <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                  <ImageIcon className="h-3 w-3" /> {proposedFileName}
+                </div>
+              )}
+              <Textarea
+                value={proposedText}
+                onChange={e => setProposedOverride(e.target.value)}
+                placeholder="Proposed label text will appear here after upload, OCR, or extraction from the Upload tab. You can also paste text directly."
+                className="h-64 font-mono text-xs"
+              />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-2">
-                <FileText className="h-4 w-4" /> Reference Listed Drug (RLD) Label Text
-              </label>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <FileText className="h-4 w-4" /> Reference Listed Drug (RLD) Label
+                </label>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">
+                    {rldText ? `${rldText.length} chars` : 'Empty'}
+                  </Badge>
+                  <Button asChild size="sm" variant="outline" disabled={isOcrRld}>
+                    <label className="cursor-pointer">
+                      {isOcrRld ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Upload className="h-3.5 w-3.5 mr-1" />}
+                      Upload image
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], 'rld')}
+                      />
+                    </label>
+                  </Button>
+                </div>
+              </div>
+              {rldFileName && (
+                <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                  <ImageIcon className="h-3 w-3" /> {rldFileName}
+                </div>
+              )}
               <Textarea
                 value={rldText}
                 onChange={e => setRldText(e.target.value)}
-                placeholder="Paste the full FDA RLD label text here (Prescribing Information / package insert)…"
+                placeholder="Upload an RLD label image or paste the full FDA RLD label text here (Prescribing Information / package insert)…"
                 className="h-64 font-mono text-xs"
               />
             </div>
