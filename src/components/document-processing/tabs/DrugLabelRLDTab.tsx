@@ -771,6 +771,9 @@ ${proposedText.slice(0, 18000)}`;
                     <span className="px-2 py-0.5 rounded bg-red-100 dark:bg-red-950/40 border border-red-300 dark:border-red-800">Mismatch</span>
                     <span className="px-2 py-0.5 rounded bg-orange-100 dark:bg-orange-950/40 border border-orange-300 dark:border-orange-800">Missing in proposed</span>
                     <span className="px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950/40 border border-blue-300 dark:border-blue-800">Missing in RLD</span>
+                    <span className="ml-2 text-muted-foreground">Inline:</span>
+                    <span className="px-1 rounded bg-red-200/80 dark:bg-red-900/60 text-red-900 dark:text-red-100">RLD-only words</span>
+                    <span className="px-1 rounded bg-green-200/80 dark:bg-green-900/60 text-green-900 dark:text-green-100">Proposed-only words</span>
                   </div>
                   <div className="rounded-md border overflow-x-auto">
                     <Table>
