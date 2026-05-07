@@ -171,6 +171,48 @@ export const DOCUMENT_TYPE_CONFIGS: DocumentTypeConfig[] = [
     specialTab: { id: 'lab-details', label: 'Lab Results', icon: '🔬' }
   },
 
+  {
+    id: 'drug-label',
+    title: 'Drug Label (FDA / RLD Compare)',
+    icon: '🏷️',
+    description: 'FDA drug labels — compare proposed label against Reference Listed Drug (RLD) and surface missing or divergent sections',
+    color: 'bg-pink-600',
+    category: 'healthcare',
+    targetFields: [
+      { key: 'brand_name', label: 'Brand Name', required: true },
+      { key: 'generic_name', label: 'Generic / Established Name', required: true },
+      { key: 'dosage_form', label: 'Dosage Form', required: true },
+      { key: 'strength', label: 'Strength', required: true },
+      { key: 'route_of_administration', label: 'Route of Administration' },
+      { key: 'ndc', label: 'NDC Code' },
+      { key: 'manufacturer', label: 'Manufacturer / Applicant' },
+      { key: 'application_number', label: 'NDA / ANDA Number' },
+      { key: 'rld_reference', label: 'Reference Listed Drug (RLD)' },
+      { key: 'indications_and_usage', label: '1 Indications and Usage' },
+      { key: 'dosage_and_administration', label: '2 Dosage and Administration' },
+      { key: 'dosage_forms_and_strengths', label: '3 Dosage Forms and Strengths' },
+      { key: 'contraindications', label: '4 Contraindications' },
+      { key: 'warnings_and_precautions', label: '5 Warnings and Precautions' },
+      { key: 'boxed_warning', label: 'Boxed Warning' },
+      { key: 'adverse_reactions', label: '6 Adverse Reactions' },
+      { key: 'drug_interactions', label: '7 Drug Interactions' },
+      { key: 'use_in_specific_populations', label: '8 Use in Specific Populations' },
+      { key: 'overdosage', label: '10 Overdosage' },
+      { key: 'description', label: '11 Description' },
+      { key: 'clinical_pharmacology', label: '12 Clinical Pharmacology' },
+      { key: 'nonclinical_toxicology', label: '13 Nonclinical Toxicology' },
+      { key: 'clinical_studies', label: '14 Clinical Studies' },
+      { key: 'how_supplied_storage_handling', label: '16 How Supplied / Storage and Handling' },
+      { key: 'patient_counseling_information', label: '17 Patient Counseling Information' },
+      { key: 'inactive_ingredients', label: 'Inactive Ingredients' },
+      { key: 'expiration_date', label: 'Expiration Date', type: 'date' },
+      { key: 'lot_number', label: 'Lot Number' }
+    ],
+    subTypes: ['Prescribing Information (PI)', 'Package Insert', 'Carton/Container Label', 'Patient Package Insert (PPI)', 'Medication Guide', 'ANDA Label', 'NDA Label'],
+    specialTab: { id: 'rld-comparison', label: 'RLD Comparison', icon: '🏷️' },
+    processingHints: { requiresSpecialOCR: true }
+  },
+
   // ========== MEDICAL IMAGING ==========
   {
     id: 'medical_imaging',
