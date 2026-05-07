@@ -358,8 +358,14 @@ ${proposedText.slice(0, 18000)}`;
               )}
 
               <h4 className="text-sm font-semibold">Section-by-section findings</h4>
-              {comparison.gaps?.map((gap, i) => (
-                <div key={i} className="rounded-md border p-3 space-y-2">
+              {comparison.gaps?.map((gap, i) => {
+                const gapClass =
+                  gap.status === 'aligned' ? 'border-green-300 dark:border-green-800 bg-green-50/60 dark:bg-green-950/20' :
+                  gap.status === 'partial' ? 'border-yellow-300 dark:border-yellow-800 bg-yellow-50/60 dark:bg-yellow-950/20' :
+                  gap.status === 'divergent' ? 'border-orange-300 dark:border-orange-800 bg-orange-50/60 dark:bg-orange-950/20' :
+                  'border-red-300 dark:border-red-800 bg-red-50/60 dark:bg-red-950/20';
+                return (
+                <div key={i} className={`rounded-md border p-3 space-y-2 ${gapClass}`}>
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 font-medium">
                       {STATUS_ICON[gap.status]}
