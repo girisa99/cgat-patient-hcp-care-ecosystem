@@ -271,6 +271,75 @@ ${proposedText.slice(0, 18000)}`;
             )}
 
             <div className="space-y-3">
+              {comparison.fieldVerifications && comparison.fieldVerifications.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-semibold flex items-center gap-2">
+                      <ShieldCheck className="h-4 w-4" /> Field-level Text Verification
+                    </h4>
+                    {(() => {
+                      const v = comparison.fieldVerifications!;
+                      const matches = v.filter(f => f.status === 'match').length;
+                      const issues = v.length - matches;
+                      return (
+                        <div className="flex gap-2 text-xs">
+                          <Badge variant="default">{matches} matched</Badge>
+                          <Badge variant="destructive">{issues} issues</Badge>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                  <div className="rounded-md border overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[18%]">Field</TableHead>
+                          <TableHead className="w-[28%]">RLD Value</TableHead>
+                          <TableHead className="w-[28%]">Proposed Value</TableHead>
+                          <TableHead className="w-[10%]">Similarity</TableHead>
+                          <TableHead className="w-[16%]">Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {comparison.fieldVerifications!.map((fv, i) => {
+                          const statusIcon =
+                            fv.status === 'match' ? <CheckCircle2 className="h-4 w-4 text-green-600" /> :
+                            fv.status === 'partial' ? <AlertTriangle className="h-4 w-4 text-yellow-500" /> :
+                            fv.status === 'mismatch' ? <XCircle className="h-4 w-4 text-destructive" /> :
+                            <MinusCircle className="h-4 w-4 text-muted-foreground" />;
+                          return (
+                            <TableRow key={i}>
+                              <TableCell className="text-xs font-medium">{fv.fieldLabel || fv.fieldKey}</TableCell>
+                              <TableCell className="text-xs whitespace-pre-wrap break-words">
+                                {fv.rldValue || <span className="text-muted-foreground italic">— not in RLD —</span>}
+                              </TableCell>
+                              <TableCell className="text-xs whitespace-pre-wrap break-words">
+                                {fv.proposedValue || <span className="text-muted-foreground italic">— missing —</span>}
+                              </TableCell>
+                              <TableCell className="text-xs">
+                                <Badge variant={fv.similarity >= 90 ? 'default' : fv.similarity >= 50 ? 'secondary' : 'destructive'}>
+                                  {fv.similarity}%
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-xs">
+                                <div className="flex flex-col gap-1">
+                                  <div className="flex items-center gap-1">
+                                    {statusIcon}
+                                    <span className="capitalize">{fv.status.replace(/_/g, ' ')}</span>
+                                  </div>
+                                  <Badge className={SEVERITY_COLOR[fv.severity]} variant="outline">{fv.severity}</Badge>
+                                  {fv.notes && <span className="text-muted-foreground">{fv.notes}</span>}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              )}
+
               <h4 className="text-sm font-semibold">Section-by-section findings</h4>
               {comparison.gaps?.map((gap, i) => (
                 <div key={i} className="rounded-md border p-3 space-y-2">
