@@ -28,8 +28,24 @@ interface ExtractedField {
 interface ProcessingResult {
   fileName?: string;
   rawText?: string;
+  imageUrl?: string;
   extractedFields?: Record<string, ExtractedField | any>;
 }
+
+const getFieldValue = (raw: any): string => {
+  if (raw === undefined || raw === null) return '';
+  if (typeof raw === 'object' && 'value' in raw) {
+    const v = (raw as any).value;
+    if (v === undefined || v === null) return '';
+    return typeof v === 'string' ? v : (() => { try { return JSON.stringify(v); } catch { return String(v); } })();
+  }
+  return typeof raw === 'string' ? raw : (() => { try { return JSON.stringify(raw); } catch { return String(raw); } })();
+};
+
+const getFieldConfidence = (raw: any): number | undefined => {
+  if (raw && typeof raw === 'object' && 'confidence' in raw) return (raw as any).confidence;
+  return undefined;
+};
 
 interface Props {
   processingResult: ProcessingResult | null;
@@ -132,10 +148,20 @@ const fileToBase64 = (file: File): Promise<string> =>
 
 const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
   const RLD_STORAGE_KEY = 'drugLabel_rldText';
+  const RLD_FIELDS_KEY = 'drugLabel_rldFields';
+  const config = getDocumentTypeById('drug-label');
+  const targetFields = config?.targetFields || [];
+
   const [rldText, setRldText] = useState<string>(() => {
     try { return sessionStorage.getItem(RLD_STORAGE_KEY) || ''; } catch { return ''; }
   });
+  const [rldFieldValues, setRldFieldValues] = useState<Record<string, string>>(() => {
+    try { return JSON.parse(sessionStorage.getItem(RLD_FIELDS_KEY) || '{}'); } catch { return {}; }
+  });
   const [proposedOverride, setProposedOverride] = useState('');
+  const [proposedFieldOverrides, setProposedFieldOverrides] = useState<Record<string, string>>({});
+  const [showRawProposed, setShowRawProposed] = useState(false);
+  const [showRawRld, setShowRawRld] = useState(false);
   const [comparison, setComparison] = useState<ComparisonResult | null>(null);
   const [isComparing, setIsComparing] = useState(false);
   const [isOcrProposed, setIsOcrProposed] = useState(false);
@@ -143,16 +169,55 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
   const [proposedFileName, setProposedFileName] = useState<string>('');
   const [rldFileName, setRldFileName] = useState<string>('');
 
-  // Persist RLD text so it survives tab switches & re-extractions
+  // Persist RLD inputs so they survive tab switches & re-extractions
   useEffect(() => {
     try {
       if (rldText) sessionStorage.setItem(RLD_STORAGE_KEY, rldText);
       else sessionStorage.removeItem(RLD_STORAGE_KEY);
     } catch {}
   }, [rldText]);
+  useEffect(() => {
+    try { sessionStorage.setItem(RLD_FIELDS_KEY, JSON.stringify(rldFieldValues)); } catch {}
+  }, [rldFieldValues]);
 
+  // Per-field proposed values pulled from extraction (with manual override support)
+  const proposedFieldValues = useMemo(() => {
+    const out: Record<string, { value: string; confidence?: number }> = {};
+    const fields = processingResult?.extractedFields || {};
+    targetFields.forEach(tf => {
+      const raw = (fields as any)[tf.key];
+      out[tf.key] = {
+        value: proposedFieldOverrides[tf.key] ?? getFieldValue(raw),
+        confidence: getFieldConfidence(raw),
+      };
+    });
+    return out;
+  }, [processingResult, proposedFieldOverrides, targetFields]);
+
+  // Composite text used by the AI: structured fields + raw OCR text
   const extractedProposed = useMemo(() => buildProposedLabelText(processingResult), [processingResult]);
-  const proposedText = proposedOverride.trim() ? proposedOverride : extractedProposed;
+  const proposedText = useMemo(() => {
+    if (proposedOverride.trim()) return proposedOverride;
+    const lines = targetFields
+      .map(tf => {
+        const v = proposedFieldValues[tf.key]?.value;
+        return v ? `${tf.label}: ${v}` : '';
+      })
+      .filter(Boolean);
+    const raw = (processingResult?.rawText || '').trim();
+    const block = lines.join('\n');
+    if (block && raw) return `${block}\n\n--- FULL EXTRACTED TEXT ---\n${raw}`;
+    return block || raw || extractedProposed;
+  }, [proposedOverride, targetFields, proposedFieldValues, processingResult, extractedProposed]);
+
+  const compositeRldText = useMemo(() => {
+    const lines = targetFields
+      .map(tf => (rldFieldValues[tf.key] ? `${tf.label}: ${rldFieldValues[tf.key]}` : ''))
+      .filter(Boolean);
+    const block = lines.join('\n');
+    if (block && rldText) return `${block}\n\n--- FULL RLD TEXT ---\n${rldText}`;
+    return block || rldText;
+  }, [targetFields, rldFieldValues, rldText]);
 
   const ocrFile = async (file: File): Promise<string> => {
     const dataUrl = await fileToBase64(file);
@@ -204,25 +269,30 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
   const lastComparedRef = useRef<string>('');
   const autoTimerRef = useRef<number | null>(null);
 
+  const rldHasContent = useMemo(() => {
+    const filledFields = Object.values(rldFieldValues).filter(v => v && v.trim()).length;
+    return filledFields >= 2 || rldText.trim().length >= 50;
+  }, [rldFieldValues, rldText]);
+
   const runComparison = useCallback(async (silent = false) => {
     if (!proposedText.trim()) {
       if (!silent) toast.error('Process a drug label first to populate the proposed label.');
       return;
     }
-    if (rldText.trim().length < 50) {
-      if (!silent) toast.error('Paste or upload the Reference Listed Drug (RLD) label first.');
+    if (!rldHasContent) {
+      if (!silent) toast.error('Fill in RLD fields, paste, or upload the Reference Listed Drug label first.');
       return;
     }
 
-    const signature = `${proposedText.length}:${rldText.length}:${proposedText.slice(0, 80)}|${rldText.slice(0, 80)}`;
+    const rldForAI = compositeRldText;
+    const signature = `${proposedText.length}:${rldForAI.length}:${proposedText.slice(0, 80)}|${rldForAI.slice(0, 80)}`;
     if (silent && signature === lastComparedRef.current) return;
     lastComparedRef.current = signature;
 
     setIsComparing(true);
     setComparison(null);
     try {
-      const config = getDocumentTypeById('drug-label');
-      const fieldList = (config?.targetFields || []).map(f => `- ${f.key} (${f.label})`).join('\n');
+      const fieldList = targetFields.map(f => `- ${f.key} (${f.label})`).join('\n');
 
       const systemPrompt = `You are an FDA labeling regulatory expert performing TWO analyses on a drug label:
 
@@ -257,7 +327,7 @@ Return STRICT JSON only, no prose.`;
 }
 
 === RLD LABEL ===
-${rldText.slice(0, 18000)}
+${rldForAI.slice(0, 18000)}
 
 === PROPOSED LABEL ===
 ${proposedText.slice(0, 18000)}`;
@@ -281,21 +351,42 @@ ${proposedText.slice(0, 18000)}`;
 
       const parsed: ComparisonResult = JSON.parse(jsonMatch[0]);
 
-      // Guarantee a row for every target field — backfill any the AI omitted
-      const targetFields = config?.targetFields || [];
+      // Guarantee a row for every target field — backfill from structured inputs when AI omits
       const existing = new Map((parsed.fieldVerifications || []).map(f => [f.fieldKey, f]));
       const fullVerifications: FieldVerification[] = targetFields.map(tf => {
+        const proposedVal = proposedFieldValues[tf.key]?.value || '';
+        const rldVal = rldFieldValues[tf.key] || '';
         const found = existing.get(tf.key);
-        if (found) return { ...found, fieldLabel: found.fieldLabel || tf.label };
+        if (found) {
+          // Prefer structured user-entered values when AI returned empty
+          return {
+            ...found,
+            fieldLabel: found.fieldLabel || tf.label,
+            proposedValue: found.proposedValue || proposedVal,
+            rldValue: found.rldValue || rldVal,
+          };
+        }
+        // Compute a baseline status from structured inputs alone
+        let status: FieldVerification['status'] = 'missing_in_proposed';
+        let similarity = 0;
+        if (proposedVal && rldVal) {
+          const norm = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim();
+          if (norm(proposedVal) === norm(rldVal)) { status = 'match'; similarity = 100; }
+          else if (norm(proposedVal).includes(norm(rldVal)) || norm(rldVal).includes(norm(proposedVal))) {
+            status = 'partial'; similarity = 70;
+          } else { status = 'mismatch'; similarity = 20; }
+        } else if (proposedVal && !rldVal) { status = 'missing_in_rld'; }
+        else if (!proposedVal && rldVal) { status = 'missing_in_proposed'; }
+
         return {
           fieldKey: tf.key,
           fieldLabel: tf.label,
-          proposedValue: '',
-          rldValue: '',
-          status: 'missing_in_proposed',
-          similarity: 0,
+          proposedValue: proposedVal,
+          rldValue: rldVal,
+          status,
+          similarity,
           severity: 'medium',
-          notes: 'Not evaluated by AI — review manually',
+          notes: existing.size === 0 ? '' : 'Not evaluated by AI — verified from structured fields',
         };
       });
       // Append any AI-returned fields not in config (extras)
@@ -311,15 +402,15 @@ ${proposedText.slice(0, 18000)}`;
     } catch (err: any) {
       console.error('RLD comparison error:', err);
       if (!silent) toast.error(err?.message || 'Comparison failed');
-      lastComparedRef.current = ''; // allow retry
+      lastComparedRef.current = '';
     } finally {
       setIsComparing(false);
     }
-  }, [proposedText, rldText]);
+  }, [proposedText, compositeRldText, rldHasContent, targetFields, proposedFieldValues, rldFieldValues]);
 
   // Auto-run comparison whenever both inputs are populated and stable for 800ms
   useEffect(() => {
-    if (!proposedText.trim() || rldText.trim().length < 50) return;
+    if (!proposedText.trim() || !rldHasContent) return;
     if (isComparing) return;
     if (autoTimerRef.current) window.clearTimeout(autoTimerRef.current);
     autoTimerRef.current = window.setTimeout(() => {
@@ -328,7 +419,8 @@ ${proposedText.slice(0, 18000)}`;
     return () => {
       if (autoTimerRef.current) window.clearTimeout(autoTimerRef.current);
     };
-  }, [proposedText, rldText, isComparing, runComparison]);
+  }, [proposedText, rldHasContent, isComparing, runComparison]);
+
 
   return (
     <div className="space-y-4">
@@ -361,84 +453,141 @@ ${proposedText.slice(0, 18000)}`;
               )}
             </AlertDescription>
           </Alert>
+          {/* Document preview from extraction */}
+          {processingResult?.imageUrl && (
+            <div className="rounded-md border bg-muted/30 p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4" /> Source Document Preview
+                  <Badge variant="outline" className="text-[10px]">{processingResult.fileName || 'document'}</Badge>
+                </span>
+              </div>
+              <div className="flex justify-center bg-background rounded p-2 max-h-72 overflow-auto">
+                <img
+                  src={processingResult.imageUrl}
+                  alt="Extracted document preview"
+                  className="max-h-64 object-contain rounded shadow-sm"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Structured side-by-side field grid */}
+          <div className="rounded-md border overflow-hidden">
+            <div className="grid grid-cols-12 bg-muted px-3 py-2 text-xs font-semibold sticky top-0 z-10 gap-2">
+              <div className="col-span-3">Field</div>
+              <div className="col-span-4 flex items-center gap-2">
+                <FileText className="h-3.5 w-3.5" /> Proposed (extracted)
+              </div>
+              <div className="col-span-4 flex items-center gap-2">
+                <ShieldCheck className="h-3.5 w-3.5" /> Reference Listed Drug (RLD)
+                <Button asChild size="sm" variant="ghost" className="h-6 px-2 ml-auto" disabled={isOcrRld}>
+                  <label className="cursor-pointer text-[10px] flex items-center">
+                    {isOcrRld ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Upload className="h-3 w-3 mr-1" />}
+                    OCR image
+                    <input type="file" accept="image/*" className="hidden"
+                      onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], 'rld')} />
+                  </label>
+                </Button>
+              </div>
+              <div className="col-span-1 text-center">Conf.</div>
+            </div>
+            <div className="divide-y max-h-[480px] overflow-y-auto">
+              {targetFields.map(tf => {
+                const p = proposedFieldValues[tf.key];
+                const rld = rldFieldValues[tf.key] || '';
+                const conf = p?.confidence;
+                const proposedFilled = !!(p?.value && p.value.trim());
+                const rldFilled = !!rld.trim();
+                return (
+                  <div key={tf.key} className="grid grid-cols-12 px-3 py-2 gap-2 text-xs items-start hover:bg-muted/40">
+                    <div className="col-span-3 font-medium pt-1.5">
+                      {tf.label}
+                      {tf.required && <span className="text-destructive ml-1">*</span>}
+                    </div>
+                    <div className="col-span-4">
+                      <Textarea
+                        value={p?.value || ''}
+                        onChange={e => setProposedFieldOverrides(s => ({ ...s, [tf.key]: e.target.value }))}
+                        placeholder={proposedFilled ? '' : '— not extracted —'}
+                        className={`min-h-[36px] text-xs font-mono ${!proposedFilled ? 'bg-orange-50 dark:bg-orange-950/20 border-orange-300' : ''}`}
+                        rows={Math.min(6, Math.max(1, Math.ceil((p?.value?.length || 0) / 60)))}
+                      />
+                    </div>
+                    <div className="col-span-4">
+                      <Textarea
+                        value={rld}
+                        onChange={e => setRldFieldValues(s => ({ ...s, [tf.key]: e.target.value }))}
+                        placeholder={rldFilled ? '' : 'Paste RLD value…'}
+                        className={`min-h-[36px] text-xs font-mono ${!rldFilled ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-300' : ''}`}
+                        rows={Math.min(6, Math.max(1, Math.ceil((rld.length || 0) / 60)))}
+                      />
+                    </div>
+                    <div className="col-span-1 flex justify-center pt-1.5">
+                      {conf !== undefined ? (
+                        <Badge variant={conf >= 0.8 ? 'default' : conf >= 0.5 ? 'secondary' : 'destructive'} className="text-[10px]">
+                          {Math.round(conf * 100)}%
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground text-[10px]">—</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Raw text fallback (collapsed by default) */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2 flex-wrap">
-                <label className="text-sm font-medium flex items-center gap-2">
-                  <FileText className="h-4 w-4" /> Proposed Label
-                </label>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">
-                    {proposedText ? `${proposedText.length} chars` : 'Empty'}
-                  </Badge>
-                  <Button asChild size="sm" variant="outline" disabled={isOcrProposed}>
-                    <label className="cursor-pointer">
-                      {isOcrProposed ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Upload className="h-3.5 w-3.5 mr-1" />}
-                      Upload image
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], 'proposed')}
-                      />
-                    </label>
-                  </Button>
-                </div>
+                <button type="button" onClick={() => setShowRawProposed(s => !s)}
+                  className="text-xs font-medium underline text-muted-foreground hover:text-foreground">
+                  {showRawProposed ? '▼' : '▶'} Raw proposed text ({proposedText.length} chars)
+                </button>
+                <Button asChild size="sm" variant="outline" disabled={isOcrProposed}>
+                  <label className="cursor-pointer">
+                    {isOcrProposed ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Upload className="h-3.5 w-3.5 mr-1" />}
+                    OCR proposed image
+                    <input type="file" accept="image/*" className="hidden"
+                      onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], 'proposed')} />
+                  </label>
+                </Button>
               </div>
-              {proposedFileName && (
-                <div className="text-[11px] text-muted-foreground flex items-center gap-1">
-                  <ImageIcon className="h-3 w-3" /> {proposedFileName}
-                </div>
+              {proposedFileName && <div className="text-[11px] text-muted-foreground">{proposedFileName}</div>}
+              {showRawProposed && (
+                <Textarea
+                  value={proposedText}
+                  onChange={e => setProposedOverride(e.target.value)}
+                  placeholder="Composite proposed text used for AI comparison…"
+                  className="h-48 font-mono text-xs"
+                />
               )}
-              <Textarea
-                value={proposedText}
-                onChange={e => setProposedOverride(e.target.value)}
-                placeholder="Proposed label text will appear here after upload, OCR, or extraction from the Upload tab. You can also paste text directly."
-                className="h-64 font-mono text-xs"
-              />
             </div>
-
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2 flex-wrap">
-                <label className="text-sm font-medium flex items-center gap-2">
-                  <FileText className="h-4 w-4" /> Reference Listed Drug (RLD) Label
-                </label>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">
-                    {rldText ? `${rldText.length} chars` : 'Empty'}
-                  </Badge>
-                  <Button asChild size="sm" variant="outline" disabled={isOcrRld}>
-                    <label className="cursor-pointer">
-                      {isOcrRld ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Upload className="h-3.5 w-3.5 mr-1" />}
-                      Upload image
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], 'rld')}
-                      />
-                    </label>
-                  </Button>
-                </div>
+                <button type="button" onClick={() => setShowRawRld(s => !s)}
+                  className="text-xs font-medium underline text-muted-foreground hover:text-foreground">
+                  {showRawRld ? '▼' : '▶'} Raw RLD text ({rldText.length} chars)
+                </button>
               </div>
-              {rldFileName && (
-                <div className="text-[11px] text-muted-foreground flex items-center gap-1">
-                  <ImageIcon className="h-3 w-3" /> {rldFileName}
-                </div>
+              {rldFileName && <div className="text-[11px] text-muted-foreground">{rldFileName}</div>}
+              {showRawRld && (
+                <Textarea
+                  value={rldText}
+                  onChange={e => setRldText(e.target.value)}
+                  placeholder="Optional full RLD label text (Prescribing Information / package insert)…"
+                  className="h-48 font-mono text-xs"
+                />
               )}
-              <Textarea
-                value={rldText}
-                onChange={e => setRldText(e.target.value)}
-                placeholder="Upload an RLD label image or paste the full FDA RLD label text here (Prescribing Information / package insert)…"
-                className="h-64 font-mono text-xs"
-              />
             </div>
           </div>
 
           <div className="flex justify-end">
             <Button
               onClick={() => { lastComparedRef.current = ''; runComparison(false); }}
-              disabled={isComparing || !proposedText || rldText.trim().length < 50}
+              disabled={isComparing || !proposedText || !rldHasContent}
             >
               {isComparing ? (
                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Comparing…</>
