@@ -117,12 +117,21 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
     setIsComparing(true);
     setComparison(null);
     try {
-      const systemPrompt = `You are an FDA labeling regulatory expert. You compare a PROPOSED drug label against the Reference Listed Drug (RLD) label.
-Identify, per FDA Physician Labeling Rule (21 CFR 201.56/57) sections:
+      const config = getDocumentTypeById('drug-label');
+      const fieldList = (config?.targetFields || []).map(f => `- ${f.key} (${f.label})`).join('\n');
+
+      const systemPrompt = `You are an FDA labeling regulatory expert performing TWO analyses on a drug label:
+
+(A) SECTION-LEVEL gap analysis per FDA Physician Labeling Rule (21 CFR 201.56/57) sections:
 1 Indications & Usage, 2 Dosage & Administration, 3 Dosage Forms & Strengths, 4 Contraindications, 5 Warnings & Precautions,
 Boxed Warning, 6 Adverse Reactions, 7 Drug Interactions, 8 Use in Specific Populations, 10 Overdosage, 11 Description,
 12 Clinical Pharmacology, 13 Nonclinical Toxicology, 14 Clinical Studies, 16 How Supplied/Storage and Handling, 17 Patient Counseling.
-For each section: status = missing | partial | divergent | aligned, plus severity = critical | high | medium | low.
+
+(B) FIELD-LEVEL TEXT VERIFICATION: for each labeling field listed below, extract the value from BOTH the PROPOSED and RLD label, compare them character/semantic-wise, and flag mismatches, missing values, or partial matches. Compute a similarity 0-100 (100 = exact text match, 90+ = semantically equivalent, <50 = clearly different).
+
+Fields to verify:
+${fieldList}
+
 Return STRICT JSON only, no prose.`;
 
       const userPrompt = `Compare the PROPOSED label against the RLD label and return JSON of shape:
@@ -133,6 +142,12 @@ Return STRICT JSON only, no prose.`;
   "gaps": [
     { "section": "string", "status": "missing|partial|divergent|aligned", "severity": "critical|high|medium|low",
       "rldExcerpt": "string (<=300 chars)", "proposedExcerpt": "string (<=300 chars)", "notes": "string" }
+  ],
+  "fieldVerifications": [
+    { "fieldKey": "string (matches the keys above)", "fieldLabel": "string",
+      "proposedValue": "string (<=400 chars, '' if not found)", "rldValue": "string (<=400 chars, '' if not found)",
+      "status": "match|mismatch|missing_in_proposed|missing_in_rld|partial",
+      "similarity": number (0-100), "severity": "critical|high|medium|low", "notes": "string" }
   ],
   "recommendations": ["string", ...]
 }
@@ -149,7 +164,7 @@ ${proposedText.slice(0, 18000)}`;
           prompt: userPrompt,
           systemPrompt,
           temperature: 0.1,
-          maxTokens: 4000,
+          maxTokens: 6000,
           action: 'generate',
         },
       });
