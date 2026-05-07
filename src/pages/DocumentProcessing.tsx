@@ -3739,6 +3739,13 @@ export default function DocumentProcessing() {
             </TabsContent>
           )}
 
+          {/* Drug Label RLD Comparison Tab */}
+          {selectedDocType === 'drug-label' && (
+            <TabsContent value="rld-comparison" className="space-y-4">
+              <DrugLabelRLDTab processingResult={processingResult} />
+            </TabsContent>
+          )}
+
           {/* Follow-Up Tab removed - Guided Workflows now integrated into SubAgentRecommendationDialog */}
 
           {/* History Tab - Using extracted component */}
