@@ -131,7 +131,10 @@ const fileToBase64 = (file: File): Promise<string> =>
   });
 
 const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
-  const [rldText, setRldText] = useState('');
+  const RLD_STORAGE_KEY = 'drugLabel_rldText';
+  const [rldText, setRldText] = useState<string>(() => {
+    try { return sessionStorage.getItem(RLD_STORAGE_KEY) || ''; } catch { return ''; }
+  });
   const [proposedOverride, setProposedOverride] = useState('');
   const [comparison, setComparison] = useState<ComparisonResult | null>(null);
   const [isComparing, setIsComparing] = useState(false);
@@ -139,6 +142,14 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
   const [isOcrRld, setIsOcrRld] = useState(false);
   const [proposedFileName, setProposedFileName] = useState<string>('');
   const [rldFileName, setRldFileName] = useState<string>('');
+
+  // Persist RLD text so it survives tab switches & re-extractions
+  useEffect(() => {
+    try {
+      if (rldText) sessionStorage.setItem(RLD_STORAGE_KEY, rldText);
+      else sessionStorage.removeItem(RLD_STORAGE_KEY);
+    } catch {}
+  }, [rldText]);
 
   const extractedProposed = useMemo(() => buildProposedLabelText(processingResult), [processingResult]);
   const proposedText = proposedOverride.trim() ? proposedOverride : extractedProposed;
