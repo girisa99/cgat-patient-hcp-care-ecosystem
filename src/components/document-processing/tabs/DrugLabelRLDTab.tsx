@@ -97,12 +97,73 @@ const buildProposedLabelText = (result: ProcessingResult | null): string => {
   return lines.join('\n');
 };
 
+const fileToBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
 const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
   const [rldText, setRldText] = useState('');
+  const [proposedOverride, setProposedOverride] = useState('');
   const [comparison, setComparison] = useState<ComparisonResult | null>(null);
   const [isComparing, setIsComparing] = useState(false);
+  const [isOcrProposed, setIsOcrProposed] = useState(false);
+  const [isOcrRld, setIsOcrRld] = useState(false);
+  const [proposedFileName, setProposedFileName] = useState<string>('');
+  const [rldFileName, setRldFileName] = useState<string>('');
 
-  const proposedText = useMemo(() => buildProposedLabelText(processingResult), [processingResult]);
+  const extractedProposed = useMemo(() => buildProposedLabelText(processingResult), [processingResult]);
+  const proposedText = proposedOverride.trim() ? proposedOverride : extractedProposed;
+
+  const ocrFile = async (file: File): Promise<string> => {
+    const dataUrl = await fileToBase64(file);
+    const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
+      body: {
+        provider: 'gemini',
+        action: 'analyze_scene',
+        prompt: 'Extract ALL text from this drug label image verbatim. Preserve sections, headings, dosing tables, warnings, and bullet structure. Output plain text only — no commentary.',
+        systemPrompt: 'You are an OCR engine specialized in pharmaceutical labels. Return only extracted text.',
+        temperature: 0,
+        maxTokens: 8000,
+        context: { image: dataUrl },
+      },
+    });
+    if (error) throw new Error(error.message);
+    const text = (data?.content || '').trim();
+    if (!text) throw new Error('No text extracted from image');
+    return text;
+  };
+
+  const handleUpload = async (file: File, target: 'proposed' | 'rld') => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file (PNG, JPG, WEBP). For PDFs, process via the Upload tab.');
+      return;
+    }
+    const setLoading = target === 'proposed' ? setIsOcrProposed : setIsOcrRld;
+    setLoading(true);
+    try {
+      toast.info(`Reading ${target === 'proposed' ? 'proposed' : 'RLD'} label…`);
+      const text = await ocrFile(file);
+      if (target === 'proposed') {
+        setProposedOverride(text);
+        setProposedFileName(file.name);
+      } else {
+        setRldText(text);
+        setRldFileName(file.name);
+      }
+      toast.success(`Extracted ${text.length} chars from ${file.name}`);
+    } catch (err: any) {
+      console.error('OCR error:', err);
+      toast.error(err?.message || 'Failed to extract text from image');
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   const runComparison = async () => {
     if (!proposedText.trim()) {
