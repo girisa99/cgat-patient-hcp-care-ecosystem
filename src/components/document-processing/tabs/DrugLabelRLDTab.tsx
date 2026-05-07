@@ -44,12 +44,24 @@ interface SectionGap {
   notes?: string;
 }
 
+interface FieldVerification {
+  fieldKey: string;
+  fieldLabel: string;
+  proposedValue: string;
+  rldValue: string;
+  status: 'match' | 'mismatch' | 'missing_in_proposed' | 'missing_in_rld' | 'partial';
+  similarity: number; // 0-100
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  notes?: string;
+}
+
 interface ComparisonResult {
   summary: string;
   overallAlignment: number; // 0-100
   gaps: SectionGap[];
   missingSections: string[];
   recommendations: string[];
+  fieldVerifications?: FieldVerification[];
 }
 
 const SEVERITY_COLOR: Record<SectionGap['severity'], string> = {
