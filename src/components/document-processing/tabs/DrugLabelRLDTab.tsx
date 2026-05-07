@@ -146,6 +146,66 @@ const fileToBase64 = (file: File): Promise<string> =>
     reader.readAsDataURL(file);
   });
 
+// ---- Word-level diff (LCS) for inline highlighting ----
+type DiffPart = { text: string; type: 'same' | 'add' | 'remove' };
+const tokenize = (s: string): string[] => (s || '').split(/(\s+)/).filter(Boolean);
+
+const diffWords = (a: string, b: string): { left: DiffPart[]; right: DiffPart[] } => {
+  const A = tokenize(a);
+  const B = tokenize(b);
+  const n = A.length, m = B.length;
+  // LCS DP — bounded for safety
+  if (n * m > 40000) {
+    return {
+      left: [{ text: a, type: a === b ? 'same' : 'remove' }],
+      right: [{ text: b, type: a === b ? 'same' : 'add' }],
+    };
+  }
+  const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+  const norm = (t: string) => t.toLowerCase();
+  for (let i = n - 1; i >= 0; i--) {
+    for (let j = m - 1; j >= 0; j--) {
+      dp[i][j] = norm(A[i]) === norm(B[j]) ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+    }
+  }
+  const left: DiffPart[] = [];
+  const right: DiffPart[] = [];
+  let i = 0, j = 0;
+  const pushLeft = (t: string, type: DiffPart['type']) => {
+    const last = left[left.length - 1];
+    if (last && last.type === type) last.text += t; else left.push({ text: t, type });
+  };
+  const pushRight = (t: string, type: DiffPart['type']) => {
+    const last = right[right.length - 1];
+    if (last && last.type === type) last.text += t; else right.push({ text: t, type });
+  };
+  while (i < n && j < m) {
+    if (norm(A[i]) === norm(B[j])) {
+      pushLeft(A[i], 'same'); pushRight(B[j], 'same'); i++; j++;
+    } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+      pushLeft(A[i], 'remove'); i++;
+    } else {
+      pushRight(B[j], 'add'); j++;
+    }
+  }
+  while (i < n) { pushLeft(A[i++], 'remove'); }
+  while (j < m) { pushRight(B[j++], 'add'); }
+  return { left, right };
+};
+
+const DiffText: React.FC<{ parts: DiffPart[]; side: 'left' | 'right' }> = ({ parts, side }) => (
+  <span className="whitespace-pre-wrap break-words">
+    {parts.map((p, i) => {
+      if (p.type === 'same') return <span key={i}>{p.text}</span>;
+      const cls = side === 'left'
+        ? 'bg-red-200/80 dark:bg-red-900/60 text-red-900 dark:text-red-100 rounded px-0.5'
+        : 'bg-green-200/80 dark:bg-green-900/60 text-green-900 dark:text-green-100 rounded px-0.5';
+      return <span key={i} className={cls}>{p.text}</span>;
+    })}
+  </span>
+);
+
+
 const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
   const RLD_STORAGE_KEY = 'drugLabel_rldText';
   const RLD_FIELDS_KEY = 'drugLabel_rldFields';
