@@ -319,7 +319,7 @@ Rules:
 - Return ONLY the JSON object.`,
         temperature: 0,
         maxTokens: 6000,
-        context: { image: dataUrl },
+        context: { image: rawBase64 },
       },
     });
     if (error) throw new Error(error.message);
