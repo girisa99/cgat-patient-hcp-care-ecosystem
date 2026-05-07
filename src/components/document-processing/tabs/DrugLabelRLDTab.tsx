@@ -281,6 +281,8 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
 
   const ocrFile = async (file: File): Promise<string> => {
     const dataUrl = await fileToBase64(file);
+    // Gemini Vision requires RAW base64, not a data: URL — strip the prefix
+    const rawBase64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
     const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
       body: {
         provider: 'gemini',
@@ -289,7 +291,7 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
         systemPrompt: 'You are an OCR engine specialized in pharmaceutical labels. Return only extracted text.',
         temperature: 0,
         maxTokens: 8000,
-        context: { image: dataUrl },
+        context: { image: rawBase64 },
       },
     });
     if (error) throw new Error(error.message);
@@ -301,6 +303,7 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
   // Structured field extractor — pulls each FDA target field out of an image into its own value
   const extractStructuredFields = async (file: File): Promise<Record<string, string>> => {
     const dataUrl = await fileToBase64(file);
+    const rawBase64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
     const fieldList = targetFields.map(f => `"${f.key}" (${f.label})`).join(', ');
     const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
       body: {
@@ -316,7 +319,7 @@ Rules:
 - Return ONLY the JSON object.`,
         temperature: 0,
         maxTokens: 6000,
-        context: { image: dataUrl },
+        context: { image: rawBase64 },
       },
     });
     if (error) throw new Error(error.message);
@@ -569,24 +572,42 @@ ${proposedText.slice(0, 18000)}`;
               )}
             </AlertDescription>
           </Alert>
-          {/* Document preview from extraction */}
-          {processingResult?.imageUrl && (
-            <div className="rounded-md border bg-muted/30 p-3">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium flex items-center gap-2">
-                  <ImageIcon className="h-4 w-4" /> Source Document Preview
-                  <Badge variant="outline" className="text-[10px]">{processingResult.fileName || 'document'}</Badge>
-                </span>
+          {/* Document preview from extraction — supports PDF and images */}
+          {processingResult?.imageUrl && (() => {
+            const url = processingResult.imageUrl;
+            const name = (processingResult.fileName || '').toLowerCase();
+            const isPdf = name.endsWith('.pdf') || url.startsWith('data:application/pdf');
+            return (
+              <div className="rounded-md border bg-muted/30 p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4" /> Source Document Preview
+                    <Badge variant="outline" className="text-[10px]">{processingResult.fileName || 'document'}</Badge>
+                  </span>
+                  <a href={url} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline">
+                    Open in new tab
+                  </a>
+                </div>
+                <div className="bg-background rounded p-2">
+                  {isPdf ? (
+                    <iframe
+                      src={url}
+                      title="Source document preview"
+                      className="w-full h-72 rounded border"
+                    />
+                  ) : (
+                    <div className="flex justify-center max-h-72 overflow-auto">
+                      <img
+                        src={url}
+                        alt="Extracted document preview"
+                        className="max-h-64 object-contain rounded shadow-sm"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="flex justify-center bg-background rounded p-2 max-h-72 overflow-auto">
-                <img
-                  src={processingResult.imageUrl}
-                  alt="Extracted document preview"
-                  className="max-h-64 object-contain rounded shadow-sm"
-                />
-              </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Structured side-by-side field grid */}
           <div className="rounded-md border overflow-hidden">
