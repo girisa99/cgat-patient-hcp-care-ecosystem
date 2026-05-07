@@ -121,6 +121,7 @@ import {
   AgentWorkflowSelector,
   GenericDocumentTab
 } from '@/components/document-processing/tabs';
+import DrugLabelRLDTab from '@/components/document-processing/tabs/DrugLabelRLDTab';
 
 // Extracted dialog components
 import { ClinicalRecommendationDialog, SettingsDialog, VerificationDialog } from '@/components/document-processing/dialogs';
