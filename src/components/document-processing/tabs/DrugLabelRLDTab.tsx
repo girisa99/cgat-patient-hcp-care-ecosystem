@@ -280,9 +280,33 @@ ${proposedText.slice(0, 18000)}`;
       if (!jsonMatch) throw new Error('AI did not return JSON');
 
       const parsed: ComparisonResult = JSON.parse(jsonMatch[0]);
+
+      // Guarantee a row for every target field — backfill any the AI omitted
+      const targetFields = config?.targetFields || [];
+      const existing = new Map((parsed.fieldVerifications || []).map(f => [f.fieldKey, f]));
+      const fullVerifications: FieldVerification[] = targetFields.map(tf => {
+        const found = existing.get(tf.key);
+        if (found) return { ...found, fieldLabel: found.fieldLabel || tf.label };
+        return {
+          fieldKey: tf.key,
+          fieldLabel: tf.label,
+          proposedValue: '',
+          rldValue: '',
+          status: 'missing_in_proposed',
+          similarity: 0,
+          severity: 'medium',
+          notes: 'Not evaluated by AI — review manually',
+        };
+      });
+      // Append any AI-returned fields not in config (extras)
+      (parsed.fieldVerifications || []).forEach(f => {
+        if (!targetFields.find(t => t.key === f.fieldKey)) fullVerifications.push(f);
+      });
+      parsed.fieldVerifications = fullVerifications;
+
       setComparison(parsed);
-      const matched = parsed.fieldVerifications?.filter(f => f.status === 'match').length ?? 0;
-      const issues = (parsed.fieldVerifications?.length ?? 0) - matched;
+      const matched = fullVerifications.filter(f => f.status === 'match').length;
+      const issues = fullVerifications.length - matched;
       toast.success(`Comparison complete — ${matched} matched, ${issues} to review`);
     } catch (err: any) {
       console.error('RLD comparison error:', err);
