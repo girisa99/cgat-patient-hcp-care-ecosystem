@@ -799,14 +799,29 @@ ${proposedText.slice(0, 18000)}`;
                             'bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100/70 dark:hover:bg-blue-950/50';
                           const missingProposed = !fv.proposedValue || fv.status === 'missing_in_proposed';
                           const missingRld = !fv.rldValue || fv.status === 'missing_in_rld';
+                          const showDiff = !missingProposed && !missingRld &&
+                            (fv.status === 'mismatch' || fv.status === 'partial');
+                          const diff = showDiff ? diffWords(fv.rldValue, fv.proposedValue) : null;
                           return (
                             <TableRow key={i} className={rowClass}>
                               <TableCell className="text-xs font-medium">{fv.fieldLabel || fv.fieldKey}</TableCell>
-                              <TableCell className={`text-xs whitespace-pre-wrap break-words ${missingRld ? 'bg-blue-100/60 dark:bg-blue-900/40' : ''}`}>
-                                {fv.rldValue || <span className="text-blue-700 dark:text-blue-300 italic font-semibold">— not in RLD —</span>}
+                              <TableCell className={`text-xs whitespace-pre-wrap break-words align-top ${missingRld ? 'bg-blue-100/60 dark:bg-blue-900/40' : ''}`}>
+                                {missingRld ? (
+                                  <span className="text-blue-700 dark:text-blue-300 italic font-semibold">— not in RLD —</span>
+                                ) : diff ? (
+                                  <DiffText parts={diff.left} side="left" />
+                                ) : (
+                                  fv.rldValue
+                                )}
                               </TableCell>
-                              <TableCell className={`text-xs whitespace-pre-wrap break-words ${missingProposed ? 'bg-orange-100/60 dark:bg-orange-900/40' : ''}`}>
-                                {fv.proposedValue || <span className="text-orange-700 dark:text-orange-300 italic font-semibold">⚠ MISSING in proposed</span>}
+                              <TableCell className={`text-xs whitespace-pre-wrap break-words align-top ${missingProposed ? 'bg-orange-100/60 dark:bg-orange-900/40' : ''}`}>
+                                {missingProposed ? (
+                                  <span className="text-orange-700 dark:text-orange-300 italic font-semibold">⚠ MISSING in proposed</span>
+                                ) : diff ? (
+                                  <DiffText parts={diff.right} side="right" />
+                                ) : (
+                                  fv.proposedValue
+                                )}
                               </TableCell>
                               <TableCell className="text-xs">
                                 <Badge variant={fv.similarity >= 90 ? 'default' : fv.similarity >= 50 ? 'secondary' : 'destructive'}>
