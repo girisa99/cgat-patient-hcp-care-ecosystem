@@ -146,6 +146,66 @@ const fileToBase64 = (file: File): Promise<string> =>
     reader.readAsDataURL(file);
   });
 
+// ---- Word-level diff (LCS) for inline highlighting ----
+type DiffPart = { text: string; type: 'same' | 'add' | 'remove' };
+const tokenize = (s: string): string[] => (s || '').split(/(\s+)/).filter(Boolean);
+
+const diffWords = (a: string, b: string): { left: DiffPart[]; right: DiffPart[] } => {
+  const A = tokenize(a);
+  const B = tokenize(b);
+  const n = A.length, m = B.length;
+  // LCS DP — bounded for safety
+  if (n * m > 40000) {
+    return {
+      left: [{ text: a, type: a === b ? 'same' : 'remove' }],
+      right: [{ text: b, type: a === b ? 'same' : 'add' }],
+    };
+  }
+  const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+  const norm = (t: string) => t.toLowerCase();
+  for (let i = n - 1; i >= 0; i--) {
+    for (let j = m - 1; j >= 0; j--) {
+      dp[i][j] = norm(A[i]) === norm(B[j]) ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+    }
+  }
+  const left: DiffPart[] = [];
+  const right: DiffPart[] = [];
+  let i = 0, j = 0;
+  const pushLeft = (t: string, type: DiffPart['type']) => {
+    const last = left[left.length - 1];
+    if (last && last.type === type) last.text += t; else left.push({ text: t, type });
+  };
+  const pushRight = (t: string, type: DiffPart['type']) => {
+    const last = right[right.length - 1];
+    if (last && last.type === type) last.text += t; else right.push({ text: t, type });
+  };
+  while (i < n && j < m) {
+    if (norm(A[i]) === norm(B[j])) {
+      pushLeft(A[i], 'same'); pushRight(B[j], 'same'); i++; j++;
+    } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+      pushLeft(A[i], 'remove'); i++;
+    } else {
+      pushRight(B[j], 'add'); j++;
+    }
+  }
+  while (i < n) { pushLeft(A[i++], 'remove'); }
+  while (j < m) { pushRight(B[j++], 'add'); }
+  return { left, right };
+};
+
+const DiffText: React.FC<{ parts: DiffPart[]; side: 'left' | 'right' }> = ({ parts, side }) => (
+  <span className="whitespace-pre-wrap break-words">
+    {parts.map((p, i) => {
+      if (p.type === 'same') return <span key={i}>{p.text}</span>;
+      const cls = side === 'left'
+        ? 'bg-red-200/80 dark:bg-red-900/60 text-red-900 dark:text-red-100 rounded px-0.5'
+        : 'bg-green-200/80 dark:bg-green-900/60 text-green-900 dark:text-green-100 rounded px-0.5';
+      return <span key={i} className={cls}>{p.text}</span>;
+    })}
+  </span>
+);
+
+
 const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
   const RLD_STORAGE_KEY = 'drugLabel_rldText';
   const RLD_FIELDS_KEY = 'drugLabel_rldFields';
@@ -238,6 +298,44 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
     return text;
   };
 
+  // Structured field extractor — pulls each FDA target field out of an image into its own value
+  const extractStructuredFields = async (file: File): Promise<Record<string, string>> => {
+    const dataUrl = await fileToBase64(file);
+    const fieldList = targetFields.map(f => `"${f.key}" (${f.label})`).join(', ');
+    const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
+      body: {
+        provider: 'gemini',
+        action: 'analyze_scene',
+        systemPrompt: 'You are an FDA drug-label parser. Read the label image and return ONLY a single JSON object — no prose, no markdown.',
+        prompt: `Extract values for these FDA labeling fields from the image and return strict JSON of shape {"<key>": "<verbatim text from label or empty string>"}.
+Use these exact keys: ${fieldList}.
+Rules:
+- Copy text VERBATIM from the label.
+- If a field is not present, use an empty string "".
+- Do NOT invent values.
+- Return ONLY the JSON object.`,
+        temperature: 0,
+        maxTokens: 6000,
+        context: { image: dataUrl },
+      },
+    });
+    if (error) throw new Error(error.message);
+    const content: string = data?.content || '';
+    const match = content.match(/\{[\s\S]*\}/);
+    if (!match) return {};
+    try {
+      const parsed = JSON.parse(match[0]);
+      const out: Record<string, string> = {};
+      Object.entries(parsed).forEach(([k, v]) => {
+        if (typeof v === 'string' && v.trim()) out[k] = v.trim();
+        else if (v && typeof v === 'object') out[k] = JSON.stringify(v);
+      });
+      return out;
+    } catch {
+      return {};
+    }
+  };
+
   const handleUpload = async (file: File, target: 'proposed' | 'rld') => {
     if (!file) return;
     if (!file.type.startsWith('image/')) {
@@ -247,16 +345,33 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
     const setLoading = target === 'proposed' ? setIsOcrProposed : setIsOcrRld;
     setLoading(true);
     try {
-      toast.info(`Reading ${target === 'proposed' ? 'proposed' : 'RLD'} label…`);
-      const text = await ocrFile(file);
+      toast.info(`Reading ${target === 'proposed' ? 'proposed' : 'RLD'} label — extracting structured fields…`);
+      // Run raw OCR + structured extraction in parallel so we get both the full text and per-field values
+      const [text, structured] = await Promise.all([
+        ocrFile(file),
+        extractStructuredFields(file).catch(err => {
+          console.warn('Structured extraction failed, falling back to raw text only:', err);
+          return {} as Record<string, string>;
+        }),
+      ]);
+      const structuredCount = Object.keys(structured).length;
+
       if (target === 'proposed') {
         setProposedOverride(text);
         setProposedFileName(file.name);
+        if (structuredCount > 0) {
+          setProposedFieldOverrides(prev => ({ ...prev, ...structured }));
+        }
       } else {
         setRldText(text);
         setRldFileName(file.name);
+        if (structuredCount > 0) {
+          setRldFieldValues(prev => ({ ...prev, ...structured }));
+        }
       }
-      toast.success(`Extracted ${text.length} chars from ${file.name}`);
+      toast.success(
+        `${target === 'proposed' ? 'Proposed' : 'RLD'} label parsed — ${structuredCount} fields + ${text.length} chars`
+      );
     } catch (err: any) {
       console.error('OCR error:', err);
       toast.error(err?.message || 'Failed to extract text from image');
@@ -264,6 +379,7 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
       setLoading(false);
     }
   };
+
 
 
   const lastComparedRef = useRef<string>('');
@@ -655,6 +771,9 @@ ${proposedText.slice(0, 18000)}`;
                     <span className="px-2 py-0.5 rounded bg-red-100 dark:bg-red-950/40 border border-red-300 dark:border-red-800">Mismatch</span>
                     <span className="px-2 py-0.5 rounded bg-orange-100 dark:bg-orange-950/40 border border-orange-300 dark:border-orange-800">Missing in proposed</span>
                     <span className="px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950/40 border border-blue-300 dark:border-blue-800">Missing in RLD</span>
+                    <span className="ml-2 text-muted-foreground">Inline:</span>
+                    <span className="px-1 rounded bg-red-200/80 dark:bg-red-900/60 text-red-900 dark:text-red-100">RLD-only words</span>
+                    <span className="px-1 rounded bg-green-200/80 dark:bg-green-900/60 text-green-900 dark:text-green-100">Proposed-only words</span>
                   </div>
                   <div className="rounded-md border overflow-x-auto">
                     <Table>
@@ -683,14 +802,29 @@ ${proposedText.slice(0, 18000)}`;
                             'bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100/70 dark:hover:bg-blue-950/50';
                           const missingProposed = !fv.proposedValue || fv.status === 'missing_in_proposed';
                           const missingRld = !fv.rldValue || fv.status === 'missing_in_rld';
+                          const showDiff = !missingProposed && !missingRld &&
+                            (fv.status === 'mismatch' || fv.status === 'partial');
+                          const diff = showDiff ? diffWords(fv.rldValue, fv.proposedValue) : null;
                           return (
                             <TableRow key={i} className={rowClass}>
                               <TableCell className="text-xs font-medium">{fv.fieldLabel || fv.fieldKey}</TableCell>
-                              <TableCell className={`text-xs whitespace-pre-wrap break-words ${missingRld ? 'bg-blue-100/60 dark:bg-blue-900/40' : ''}`}>
-                                {fv.rldValue || <span className="text-blue-700 dark:text-blue-300 italic font-semibold">— not in RLD —</span>}
+                              <TableCell className={`text-xs whitespace-pre-wrap break-words align-top ${missingRld ? 'bg-blue-100/60 dark:bg-blue-900/40' : ''}`}>
+                                {missingRld ? (
+                                  <span className="text-blue-700 dark:text-blue-300 italic font-semibold">— not in RLD —</span>
+                                ) : diff ? (
+                                  <DiffText parts={diff.left} side="left" />
+                                ) : (
+                                  fv.rldValue
+                                )}
                               </TableCell>
-                              <TableCell className={`text-xs whitespace-pre-wrap break-words ${missingProposed ? 'bg-orange-100/60 dark:bg-orange-900/40' : ''}`}>
-                                {fv.proposedValue || <span className="text-orange-700 dark:text-orange-300 italic font-semibold">⚠ MISSING in proposed</span>}
+                              <TableCell className={`text-xs whitespace-pre-wrap break-words align-top ${missingProposed ? 'bg-orange-100/60 dark:bg-orange-900/40' : ''}`}>
+                                {missingProposed ? (
+                                  <span className="text-orange-700 dark:text-orange-300 italic font-semibold">⚠ MISSING in proposed</span>
+                                ) : diff ? (
+                                  <DiffText parts={diff.right} side="right" />
+                                ) : (
+                                  fv.proposedValue
+                                )}
                               </TableCell>
                               <TableCell className="text-xs">
                                 <Badge variant={fv.similarity >= 90 ? 'default' : fv.similarity >= 50 ? 'secondary' : 'destructive'}>
