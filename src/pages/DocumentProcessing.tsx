@@ -121,6 +121,7 @@ import {
   AgentWorkflowSelector,
   GenericDocumentTab
 } from '@/components/document-processing/tabs';
+import DrugLabelRLDTab from '@/components/document-processing/tabs/DrugLabelRLDTab';
 
 // Extracted dialog components
 import { ClinicalRecommendationDialog, SettingsDialog, VerificationDialog } from '@/components/document-processing/dialogs';
@@ -3736,6 +3737,13 @@ export default function DocumentProcessing() {
                   // Could update tab label dynamically here if needed
                 }}
               />
+            </TabsContent>
+          )}
+
+          {/* Drug Label RLD Comparison Tab */}
+          {selectedDocType === 'drug-label' && (
+            <TabsContent value="rld-comparison" className="space-y-4">
+              <DrugLabelRLDTab processingResult={processingResult} />
             </TabsContent>
           )}
 
