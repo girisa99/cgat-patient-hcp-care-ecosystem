@@ -258,29 +258,73 @@ ${proposedText.slice(0, 18000)}`;
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
                 <label className="text-sm font-medium flex items-center gap-2">
-                  <FileText className="h-4 w-4" /> Proposed Label (from extraction)
+                  <FileText className="h-4 w-4" /> Proposed Label
                 </label>
-                <Badge variant="outline">
-                  {proposedText ? `${proposedText.length} chars` : 'Empty — process a label first'}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">
+                    {proposedText ? `${proposedText.length} chars` : 'Empty'}
+                  </Badge>
+                  <Button asChild size="sm" variant="outline" disabled={isOcrProposed}>
+                    <label className="cursor-pointer">
+                      {isOcrProposed ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Upload className="h-3.5 w-3.5 mr-1" />}
+                      Upload image
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], 'proposed')}
+                      />
+                    </label>
+                  </Button>
+                </div>
               </div>
-              <ScrollArea className="h-64 rounded-md border bg-muted/30 p-3">
-                <pre className="text-xs whitespace-pre-wrap font-mono">
-                  {proposedText || 'No proposed label yet. Upload and process a drug label in the Upload tab.'}
-                </pre>
-              </ScrollArea>
+              {proposedFileName && (
+                <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                  <ImageIcon className="h-3 w-3" /> {proposedFileName}
+                </div>
+              )}
+              <Textarea
+                value={proposedText}
+                onChange={e => setProposedOverride(e.target.value)}
+                placeholder="Proposed label text will appear here after upload, OCR, or extraction from the Upload tab. You can also paste text directly."
+                className="h-64 font-mono text-xs"
+              />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-2">
-                <FileText className="h-4 w-4" /> Reference Listed Drug (RLD) Label Text
-              </label>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <FileText className="h-4 w-4" /> Reference Listed Drug (RLD) Label
+                </label>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">
+                    {rldText ? `${rldText.length} chars` : 'Empty'}
+                  </Badge>
+                  <Button asChild size="sm" variant="outline" disabled={isOcrRld}>
+                    <label className="cursor-pointer">
+                      {isOcrRld ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Upload className="h-3.5 w-3.5 mr-1" />}
+                      Upload image
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], 'rld')}
+                      />
+                    </label>
+                  </Button>
+                </div>
+              </div>
+              {rldFileName && (
+                <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                  <ImageIcon className="h-3 w-3" /> {rldFileName}
+                </div>
+              )}
               <Textarea
                 value={rldText}
                 onChange={e => setRldText(e.target.value)}
-                placeholder="Paste the full FDA RLD label text here (Prescribing Information / package insert)…"
+                placeholder="Upload an RLD label image or paste the full FDA RLD label text here (Prescribing Information / package insert)…"
                 className="h-64 font-mono text-xs"
               />
             </div>
