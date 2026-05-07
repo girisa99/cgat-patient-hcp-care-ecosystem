@@ -148,10 +148,20 @@ const fileToBase64 = (file: File): Promise<string> =>
 
 const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
   const RLD_STORAGE_KEY = 'drugLabel_rldText';
+  const RLD_FIELDS_KEY = 'drugLabel_rldFields';
+  const config = getDocumentTypeById('drug-label');
+  const targetFields = config?.targetFields || [];
+
   const [rldText, setRldText] = useState<string>(() => {
     try { return sessionStorage.getItem(RLD_STORAGE_KEY) || ''; } catch { return ''; }
   });
+  const [rldFieldValues, setRldFieldValues] = useState<Record<string, string>>(() => {
+    try { return JSON.parse(sessionStorage.getItem(RLD_FIELDS_KEY) || '{}'); } catch { return {}; }
+  });
   const [proposedOverride, setProposedOverride] = useState('');
+  const [proposedFieldOverrides, setProposedFieldOverrides] = useState<Record<string, string>>({});
+  const [showRawProposed, setShowRawProposed] = useState(false);
+  const [showRawRld, setShowRawRld] = useState(false);
   const [comparison, setComparison] = useState<ComparisonResult | null>(null);
   const [isComparing, setIsComparing] = useState(false);
   const [isOcrProposed, setIsOcrProposed] = useState(false);
@@ -159,16 +169,55 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
   const [proposedFileName, setProposedFileName] = useState<string>('');
   const [rldFileName, setRldFileName] = useState<string>('');
 
-  // Persist RLD text so it survives tab switches & re-extractions
+  // Persist RLD inputs so they survive tab switches & re-extractions
   useEffect(() => {
     try {
       if (rldText) sessionStorage.setItem(RLD_STORAGE_KEY, rldText);
       else sessionStorage.removeItem(RLD_STORAGE_KEY);
     } catch {}
   }, [rldText]);
+  useEffect(() => {
+    try { sessionStorage.setItem(RLD_FIELDS_KEY, JSON.stringify(rldFieldValues)); } catch {}
+  }, [rldFieldValues]);
 
+  // Per-field proposed values pulled from extraction (with manual override support)
+  const proposedFieldValues = useMemo(() => {
+    const out: Record<string, { value: string; confidence?: number }> = {};
+    const fields = processingResult?.extractedFields || {};
+    targetFields.forEach(tf => {
+      const raw = (fields as any)[tf.key];
+      out[tf.key] = {
+        value: proposedFieldOverrides[tf.key] ?? getFieldValue(raw),
+        confidence: getFieldConfidence(raw),
+      };
+    });
+    return out;
+  }, [processingResult, proposedFieldOverrides, targetFields]);
+
+  // Composite text used by the AI: structured fields + raw OCR text
   const extractedProposed = useMemo(() => buildProposedLabelText(processingResult), [processingResult]);
-  const proposedText = proposedOverride.trim() ? proposedOverride : extractedProposed;
+  const proposedText = useMemo(() => {
+    if (proposedOverride.trim()) return proposedOverride;
+    const lines = targetFields
+      .map(tf => {
+        const v = proposedFieldValues[tf.key]?.value;
+        return v ? `${tf.label}: ${v}` : '';
+      })
+      .filter(Boolean);
+    const raw = (processingResult?.rawText || '').trim();
+    const block = lines.join('\n');
+    if (block && raw) return `${block}\n\n--- FULL EXTRACTED TEXT ---\n${raw}`;
+    return block || raw || extractedProposed;
+  }, [proposedOverride, targetFields, proposedFieldValues, processingResult, extractedProposed]);
+
+  const compositeRldText = useMemo(() => {
+    const lines = targetFields
+      .map(tf => (rldFieldValues[tf.key] ? `${tf.label}: ${rldFieldValues[tf.key]}` : ''))
+      .filter(Boolean);
+    const block = lines.join('\n');
+    if (block && rldText) return `${block}\n\n--- FULL RLD TEXT ---\n${rldText}`;
+    return block || rldText;
+  }, [targetFields, rldFieldValues, rldText]);
 
   const ocrFile = async (file: File): Promise<string> => {
     const dataUrl = await fileToBase64(file);
