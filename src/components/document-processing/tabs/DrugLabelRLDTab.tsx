@@ -572,24 +572,42 @@ ${proposedText.slice(0, 18000)}`;
               )}
             </AlertDescription>
           </Alert>
-          {/* Document preview from extraction */}
-          {processingResult?.imageUrl && (
-            <div className="rounded-md border bg-muted/30 p-3">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium flex items-center gap-2">
-                  <ImageIcon className="h-4 w-4" /> Source Document Preview
-                  <Badge variant="outline" className="text-[10px]">{processingResult.fileName || 'document'}</Badge>
-                </span>
+          {/* Document preview from extraction — supports PDF and images */}
+          {processingResult?.imageUrl && (() => {
+            const url = processingResult.imageUrl;
+            const name = (processingResult.fileName || '').toLowerCase();
+            const isPdf = name.endsWith('.pdf') || url.startsWith('data:application/pdf');
+            return (
+              <div className="rounded-md border bg-muted/30 p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4" /> Source Document Preview
+                    <Badge variant="outline" className="text-[10px]">{processingResult.fileName || 'document'}</Badge>
+                  </span>
+                  <a href={url} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline">
+                    Open in new tab
+                  </a>
+                </div>
+                <div className="bg-background rounded p-2">
+                  {isPdf ? (
+                    <iframe
+                      src={url}
+                      title="Source document preview"
+                      className="w-full h-72 rounded border"
+                    />
+                  ) : (
+                    <div className="flex justify-center max-h-72 overflow-auto">
+                      <img
+                        src={url}
+                        alt="Extracted document preview"
+                        className="max-h-64 object-contain rounded shadow-sm"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="flex justify-center bg-background rounded p-2 max-h-72 overflow-auto">
-                <img
-                  src={processingResult.imageUrl}
-                  alt="Extracted document preview"
-                  className="max-h-64 object-contain rounded shadow-sm"
-                />
-              </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Structured side-by-side field grid */}
           <div className="rounded-md border overflow-hidden">
