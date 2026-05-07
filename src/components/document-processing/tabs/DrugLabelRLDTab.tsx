@@ -289,6 +289,14 @@ ${proposedText.slice(0, 18000)}`;
                       );
                     })()}
                   </div>
+                  <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                    <span className="text-muted-foreground">Legend:</span>
+                    <span className="px-2 py-0.5 rounded bg-green-100 dark:bg-green-950/40 border border-green-300 dark:border-green-800">Match</span>
+                    <span className="px-2 py-0.5 rounded bg-yellow-100 dark:bg-yellow-950/40 border border-yellow-300 dark:border-yellow-800">Partial</span>
+                    <span className="px-2 py-0.5 rounded bg-red-100 dark:bg-red-950/40 border border-red-300 dark:border-red-800">Mismatch</span>
+                    <span className="px-2 py-0.5 rounded bg-orange-100 dark:bg-orange-950/40 border border-orange-300 dark:border-orange-800">Missing in proposed</span>
+                    <span className="px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950/40 border border-blue-300 dark:border-blue-800">Missing in RLD</span>
+                  </div>
                   <div className="rounded-md border overflow-x-auto">
                     <Table>
                       <TableHeader>
@@ -307,14 +315,23 @@ ${proposedText.slice(0, 18000)}`;
                             fv.status === 'partial' ? <AlertTriangle className="h-4 w-4 text-yellow-500" /> :
                             fv.status === 'mismatch' ? <XCircle className="h-4 w-4 text-destructive" /> :
                             <MinusCircle className="h-4 w-4 text-muted-foreground" />;
+                          // Row-level highlight by status
+                          const rowClass =
+                            fv.status === 'match' ? 'bg-green-50 dark:bg-green-950/30 hover:bg-green-100/70 dark:hover:bg-green-950/50' :
+                            fv.status === 'partial' ? 'bg-yellow-50 dark:bg-yellow-950/30 hover:bg-yellow-100/70 dark:hover:bg-yellow-950/50' :
+                            fv.status === 'mismatch' ? 'bg-red-50 dark:bg-red-950/30 hover:bg-red-100/70 dark:hover:bg-red-950/50' :
+                            fv.status === 'missing_in_proposed' ? 'bg-orange-50 dark:bg-orange-950/30 hover:bg-orange-100/70 dark:hover:bg-orange-950/50' :
+                            'bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100/70 dark:hover:bg-blue-950/50';
+                          const missingProposed = !fv.proposedValue || fv.status === 'missing_in_proposed';
+                          const missingRld = !fv.rldValue || fv.status === 'missing_in_rld';
                           return (
-                            <TableRow key={i}>
+                            <TableRow key={i} className={rowClass}>
                               <TableCell className="text-xs font-medium">{fv.fieldLabel || fv.fieldKey}</TableCell>
-                              <TableCell className="text-xs whitespace-pre-wrap break-words">
-                                {fv.rldValue || <span className="text-muted-foreground italic">— not in RLD —</span>}
+                              <TableCell className={`text-xs whitespace-pre-wrap break-words ${missingRld ? 'bg-blue-100/60 dark:bg-blue-900/40' : ''}`}>
+                                {fv.rldValue || <span className="text-blue-700 dark:text-blue-300 italic font-semibold">— not in RLD —</span>}
                               </TableCell>
-                              <TableCell className="text-xs whitespace-pre-wrap break-words">
-                                {fv.proposedValue || <span className="text-muted-foreground italic">— missing —</span>}
+                              <TableCell className={`text-xs whitespace-pre-wrap break-words ${missingProposed ? 'bg-orange-100/60 dark:bg-orange-900/40' : ''}`}>
+                                {fv.proposedValue || <span className="text-orange-700 dark:text-orange-300 italic font-semibold">⚠ MISSING in proposed</span>}
                               </TableCell>
                               <TableCell className="text-xs">
                                 <Badge variant={fv.similarity >= 90 ? 'default' : fv.similarity >= 50 ? 'secondary' : 'destructive'}>
@@ -325,7 +342,7 @@ ${proposedText.slice(0, 18000)}`;
                                 <div className="flex flex-col gap-1">
                                   <div className="flex items-center gap-1">
                                     {statusIcon}
-                                    <span className="capitalize">{fv.status.replace(/_/g, ' ')}</span>
+                                    <span className="capitalize font-medium">{fv.status.replace(/_/g, ' ')}</span>
                                   </div>
                                   <Badge className={SEVERITY_COLOR[fv.severity]} variant="outline">{fv.severity}</Badge>
                                   {fv.notes && <span className="text-muted-foreground">{fv.notes}</span>}
@@ -341,8 +358,14 @@ ${proposedText.slice(0, 18000)}`;
               )}
 
               <h4 className="text-sm font-semibold">Section-by-section findings</h4>
-              {comparison.gaps?.map((gap, i) => (
-                <div key={i} className="rounded-md border p-3 space-y-2">
+              {comparison.gaps?.map((gap, i) => {
+                const gapClass =
+                  gap.status === 'aligned' ? 'border-green-300 dark:border-green-800 bg-green-50/60 dark:bg-green-950/20' :
+                  gap.status === 'partial' ? 'border-yellow-300 dark:border-yellow-800 bg-yellow-50/60 dark:bg-yellow-950/20' :
+                  gap.status === 'divergent' ? 'border-orange-300 dark:border-orange-800 bg-orange-50/60 dark:bg-orange-950/20' :
+                  'border-red-300 dark:border-red-800 bg-red-50/60 dark:bg-red-950/20';
+                return (
+                <div key={i} className={`rounded-md border p-3 space-y-2 ${gapClass}`}>
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 font-medium">
                       {STATUS_ICON[gap.status]}
@@ -371,7 +394,8 @@ ${proposedText.slice(0, 18000)}`;
                     </div>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             {comparison.recommendations?.length > 0 && (
