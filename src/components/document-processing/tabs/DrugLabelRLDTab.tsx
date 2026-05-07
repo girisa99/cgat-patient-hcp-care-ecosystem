@@ -298,6 +298,44 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
     return text;
   };
 
+  // Structured field extractor — pulls each FDA target field out of an image into its own value
+  const extractStructuredFields = async (file: File): Promise<Record<string, string>> => {
+    const dataUrl = await fileToBase64(file);
+    const fieldList = targetFields.map(f => `"${f.key}" (${f.label})`).join(', ');
+    const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
+      body: {
+        provider: 'gemini',
+        action: 'analyze_scene',
+        systemPrompt: 'You are an FDA drug-label parser. Read the label image and return ONLY a single JSON object — no prose, no markdown.',
+        prompt: `Extract values for these FDA labeling fields from the image and return strict JSON of shape {"<key>": "<verbatim text from label or empty string>"}.
+Use these exact keys: ${fieldList}.
+Rules:
+- Copy text VERBATIM from the label.
+- If a field is not present, use an empty string "".
+- Do NOT invent values.
+- Return ONLY the JSON object.`,
+        temperature: 0,
+        maxTokens: 6000,
+        context: { image: dataUrl },
+      },
+    });
+    if (error) throw new Error(error.message);
+    const content: string = data?.content || '';
+    const match = content.match(/\{[\s\S]*\}/);
+    if (!match) return {};
+    try {
+      const parsed = JSON.parse(match[0]);
+      const out: Record<string, string> = {};
+      Object.entries(parsed).forEach(([k, v]) => {
+        if (typeof v === 'string' && v.trim()) out[k] = v.trim();
+        else if (v && typeof v === 'object') out[k] = JSON.stringify(v);
+      });
+      return out;
+    } catch {
+      return {};
+    }
+  };
+
   const handleUpload = async (file: File, target: 'proposed' | 'rld') => {
     if (!file) return;
     if (!file.type.startsWith('image/')) {
@@ -307,16 +345,33 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
     const setLoading = target === 'proposed' ? setIsOcrProposed : setIsOcrRld;
     setLoading(true);
     try {
-      toast.info(`Reading ${target === 'proposed' ? 'proposed' : 'RLD'} label…`);
-      const text = await ocrFile(file);
+      toast.info(`Reading ${target === 'proposed' ? 'proposed' : 'RLD'} label — extracting structured fields…`);
+      // Run raw OCR + structured extraction in parallel so we get both the full text and per-field values
+      const [text, structured] = await Promise.all([
+        ocrFile(file),
+        extractStructuredFields(file).catch(err => {
+          console.warn('Structured extraction failed, falling back to raw text only:', err);
+          return {} as Record<string, string>;
+        }),
+      ]);
+      const structuredCount = Object.keys(structured).length;
+
       if (target === 'proposed') {
         setProposedOverride(text);
         setProposedFileName(file.name);
+        if (structuredCount > 0) {
+          setProposedFieldOverrides(prev => ({ ...prev, ...structured }));
+        }
       } else {
         setRldText(text);
         setRldFileName(file.name);
+        if (structuredCount > 0) {
+          setRldFieldValues(prev => ({ ...prev, ...structured }));
+        }
       }
-      toast.success(`Extracted ${text.length} chars from ${file.name}`);
+      toast.success(
+        `${target === 'proposed' ? 'Proposed' : 'RLD'} label parsed — ${structuredCount} fields + ${text.length} chars`
+      );
     } catch (err: any) {
       console.error('OCR error:', err);
       toast.error(err?.message || 'Failed to extract text from image');
@@ -324,6 +379,7 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
       setLoading(false);
     }
   };
+
 
 
   const lastComparedRef = useRef<string>('');
