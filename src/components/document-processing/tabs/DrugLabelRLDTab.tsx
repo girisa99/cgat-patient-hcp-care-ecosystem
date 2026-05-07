@@ -269,25 +269,30 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
   const lastComparedRef = useRef<string>('');
   const autoTimerRef = useRef<number | null>(null);
 
+  const rldHasContent = useMemo(() => {
+    const filledFields = Object.values(rldFieldValues).filter(v => v && v.trim()).length;
+    return filledFields >= 2 || rldText.trim().length >= 50;
+  }, [rldFieldValues, rldText]);
+
   const runComparison = useCallback(async (silent = false) => {
     if (!proposedText.trim()) {
       if (!silent) toast.error('Process a drug label first to populate the proposed label.');
       return;
     }
-    if (rldText.trim().length < 50) {
-      if (!silent) toast.error('Paste or upload the Reference Listed Drug (RLD) label first.');
+    if (!rldHasContent) {
+      if (!silent) toast.error('Fill in RLD fields, paste, or upload the Reference Listed Drug label first.');
       return;
     }
 
-    const signature = `${proposedText.length}:${rldText.length}:${proposedText.slice(0, 80)}|${rldText.slice(0, 80)}`;
+    const rldForAI = compositeRldText;
+    const signature = `${proposedText.length}:${rldForAI.length}:${proposedText.slice(0, 80)}|${rldForAI.slice(0, 80)}`;
     if (silent && signature === lastComparedRef.current) return;
     lastComparedRef.current = signature;
 
     setIsComparing(true);
     setComparison(null);
     try {
-      const config = getDocumentTypeById('drug-label');
-      const fieldList = (config?.targetFields || []).map(f => `- ${f.key} (${f.label})`).join('\n');
+      const fieldList = targetFields.map(f => `- ${f.key} (${f.label})`).join('\n');
 
       const systemPrompt = `You are an FDA labeling regulatory expert performing TWO analyses on a drug label:
 
@@ -322,7 +327,7 @@ Return STRICT JSON only, no prose.`;
 }
 
 === RLD LABEL ===
-${rldText.slice(0, 18000)}
+${rldForAI.slice(0, 18000)}
 
 === PROPOSED LABEL ===
 ${proposedText.slice(0, 18000)}`;
@@ -346,21 +351,42 @@ ${proposedText.slice(0, 18000)}`;
 
       const parsed: ComparisonResult = JSON.parse(jsonMatch[0]);
 
-      // Guarantee a row for every target field — backfill any the AI omitted
-      const targetFields = config?.targetFields || [];
+      // Guarantee a row for every target field — backfill from structured inputs when AI omits
       const existing = new Map((parsed.fieldVerifications || []).map(f => [f.fieldKey, f]));
       const fullVerifications: FieldVerification[] = targetFields.map(tf => {
+        const proposedVal = proposedFieldValues[tf.key]?.value || '';
+        const rldVal = rldFieldValues[tf.key] || '';
         const found = existing.get(tf.key);
-        if (found) return { ...found, fieldLabel: found.fieldLabel || tf.label };
+        if (found) {
+          // Prefer structured user-entered values when AI returned empty
+          return {
+            ...found,
+            fieldLabel: found.fieldLabel || tf.label,
+            proposedValue: found.proposedValue || proposedVal,
+            rldValue: found.rldValue || rldVal,
+          };
+        }
+        // Compute a baseline status from structured inputs alone
+        let status: FieldVerification['status'] = 'missing_in_proposed';
+        let similarity = 0;
+        if (proposedVal && rldVal) {
+          const norm = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim();
+          if (norm(proposedVal) === norm(rldVal)) { status = 'match'; similarity = 100; }
+          else if (norm(proposedVal).includes(norm(rldVal)) || norm(rldVal).includes(norm(proposedVal))) {
+            status = 'partial'; similarity = 70;
+          } else { status = 'mismatch'; similarity = 20; }
+        } else if (proposedVal && !rldVal) { status = 'missing_in_rld'; }
+        else if (!proposedVal && rldVal) { status = 'missing_in_proposed'; }
+
         return {
           fieldKey: tf.key,
           fieldLabel: tf.label,
-          proposedValue: '',
-          rldValue: '',
-          status: 'missing_in_proposed',
-          similarity: 0,
+          proposedValue: proposedVal,
+          rldValue: rldVal,
+          status,
+          similarity,
           severity: 'medium',
-          notes: 'Not evaluated by AI — review manually',
+          notes: existing.size === 0 ? '' : 'Not evaluated by AI — verified from structured fields',
         };
       });
       // Append any AI-returned fields not in config (extras)
@@ -376,15 +402,15 @@ ${proposedText.slice(0, 18000)}`;
     } catch (err: any) {
       console.error('RLD comparison error:', err);
       if (!silent) toast.error(err?.message || 'Comparison failed');
-      lastComparedRef.current = ''; // allow retry
+      lastComparedRef.current = '';
     } finally {
       setIsComparing(false);
     }
-  }, [proposedText, rldText]);
+  }, [proposedText, compositeRldText, rldHasContent, targetFields, proposedFieldValues, rldFieldValues]);
 
   // Auto-run comparison whenever both inputs are populated and stable for 800ms
   useEffect(() => {
-    if (!proposedText.trim() || rldText.trim().length < 50) return;
+    if (!proposedText.trim() || !rldHasContent) return;
     if (isComparing) return;
     if (autoTimerRef.current) window.clearTimeout(autoTimerRef.current);
     autoTimerRef.current = window.setTimeout(() => {
@@ -393,7 +419,8 @@ ${proposedText.slice(0, 18000)}`;
     return () => {
       if (autoTimerRef.current) window.clearTimeout(autoTimerRef.current);
     };
-  }, [proposedText, rldText, isComparing, runComparison]);
+  }, [proposedText, rldHasContent, isComparing, runComparison]);
+
 
   return (
     <div className="space-y-4">
