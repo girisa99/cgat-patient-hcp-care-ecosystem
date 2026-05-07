@@ -355,7 +355,7 @@ ${proposedText.slice(0, 18000)}`;
 
           <div className="flex justify-end">
             <Button
-              onClick={runComparison}
+              onClick={() => { lastComparedRef.current = ''; runComparison(false); }}
               disabled={isComparing || !proposedText || rldText.trim().length < 50}
             >
               {isComparing ? (
