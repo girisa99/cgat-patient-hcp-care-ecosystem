@@ -304,6 +304,28 @@ ${proposedText.slice(0, 18000)}`;
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <Alert>
+            <FileText className="h-4 w-4" />
+            <AlertTitle>How this works</AlertTitle>
+            <AlertDescription className="text-xs">
+              The <strong>Proposed Label</strong> is auto-populated from your most recent extraction
+              (Upload tab — OCR/NLP fields + raw text). Upload or paste the <strong>RLD label</strong>{' '}
+              on the right. Comparison runs automatically and shows field-by-field matches, mismatches,
+              and what's missing.
+              {processingResult ? (
+                <span className="block mt-1 text-green-700 dark:text-green-400">
+                  ✓ Loaded extraction from <strong>{processingResult.fileName || 'last document'}</strong>
+                  {' '}({Object.keys(processingResult.extractedFields || {}).length} fields,{' '}
+                  {(processingResult.rawText || '').length} chars of raw text)
+                </span>
+              ) : (
+                <span className="block mt-1 text-orange-700 dark:text-orange-400">
+                  ⚠ No extraction loaded yet — go to the Upload tab and process a drug label first,
+                  or upload an image directly below.
+                </span>
+              )}
+            </AlertDescription>
+          </Alert>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2 flex-wrap">
