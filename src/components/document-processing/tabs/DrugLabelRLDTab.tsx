@@ -78,23 +78,48 @@ const STATUS_ICON: Record<SectionGap['status'], React.ReactNode> = {
   aligned: <CheckCircle2 className="h-4 w-4 text-green-600" />,
 };
 
+const humanizeKey = (k: string) =>
+  k.replace(/[_-]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
 const buildProposedLabelText = (result: ProcessingResult | null): string => {
   if (!result) return '';
-  if (result.rawText && result.rawText.trim().length > 50) return result.rawText;
-
+  const rawText = (result.rawText || '').trim();
   const fields = result.extractedFields || {};
   const config = getDocumentTypeById('drug-label');
-  if (!config) return '';
 
+  // 1. Build mapped lines from drug-label target fields (preferred ordering)
   const lines: string[] = [];
-  config.targetFields.forEach(f => {
-    const raw = fields[f.key];
-    const value = raw && typeof raw === 'object' && 'value' in raw ? raw.value : raw;
-    if (value !== undefined && value !== null && String(value).trim() !== '') {
-      lines.push(`${f.label}: ${String(value)}`);
-    }
+  const usedKeys = new Set<string>();
+  if (config) {
+    config.targetFields.forEach(f => {
+      const raw = (fields as any)[f.key];
+      const value = raw && typeof raw === 'object' && 'value' in raw ? raw.value : raw;
+      if (value !== undefined && value !== null && String(value).trim() !== '') {
+        lines.push(`${f.label}: ${String(value)}`);
+        usedKeys.add(f.key);
+      }
+    });
+  }
+
+  // 2. Append any other extracted fields not in the config so nothing is lost
+  Object.entries(fields).forEach(([k, raw]) => {
+    if (usedKeys.has(k)) return;
+    if (k === 'tables' || k === 'ai_insights_json') return;
+    const value = raw && typeof raw === 'object' && 'value' in (raw as any) ? (raw as any).value : raw;
+    if (value === undefined || value === null) return;
+    const str = typeof value === 'string' ? value : (() => {
+      try { return JSON.stringify(value); } catch { return String(value); }
+    })();
+    if (!str.trim()) return;
+    lines.push(`${humanizeKey(k)}: ${str}`);
   });
-  return lines.join('\n');
+
+  const fieldsBlock = lines.join('\n');
+
+  // 3. Combine raw OCR text + structured fields so the LLM has everything
+  if (rawText && fieldsBlock) return `${fieldsBlock}\n\n--- FULL EXTRACTED TEXT ---\n${rawText}`;
+  if (rawText) return rawText;
+  return fieldsBlock;
 };
 
 const fileToBase64 = (file: File): Promise<string> =>
@@ -279,6 +304,28 @@ ${proposedText.slice(0, 18000)}`;
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <Alert>
+            <FileText className="h-4 w-4" />
+            <AlertTitle>How this works</AlertTitle>
+            <AlertDescription className="text-xs">
+              The <strong>Proposed Label</strong> is auto-populated from your most recent extraction
+              (Upload tab — OCR/NLP fields + raw text). Upload or paste the <strong>RLD label</strong>{' '}
+              on the right. Comparison runs automatically and shows field-by-field matches, mismatches,
+              and what's missing.
+              {processingResult ? (
+                <span className="block mt-1 text-green-700 dark:text-green-400">
+                  ✓ Loaded extraction from <strong>{processingResult.fileName || 'last document'}</strong>
+                  {' '}({Object.keys(processingResult.extractedFields || {}).length} fields,{' '}
+                  {(processingResult.rawText || '').length} chars of raw text)
+                </span>
+              ) : (
+                <span className="block mt-1 text-orange-700 dark:text-orange-400">
+                  ⚠ No extraction loaded yet — go to the Upload tab and process a drug label first,
+                  or upload an image directly below.
+                </span>
+              )}
+            </AlertDescription>
+          </Alert>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2 flex-wrap">
