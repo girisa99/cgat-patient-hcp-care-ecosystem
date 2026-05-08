@@ -577,8 +577,13 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
   }, [processingResult?.fileName, processingResult?.extractedFields, sourceRawText, sourceImageBase64]);
 
   const runExtraction = useCallback(async (silent = false) => {
-    if (!sourceImageBase64 && !sourceRawText) {
+    if (!sourceImageBase64 && !sourceRawText && !uploadedProposedExtraction?.fields.length) {
       if (!silent) toast.error('Process a drug label on the Upload tab first.');
+      return;
+    }
+    if (!sourceImageBase64 && !sourceRawText && uploadedProposedExtraction?.fields.length) {
+      setExtraction(uploadedProposedExtraction);
+      if (!silent) toast.success(`Loaded ${uploadedProposedExtraction.fields.length} mapped Proposed fields`);
       return;
     }
     setIsExtracting(true);
@@ -612,11 +617,11 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
   // Auto-run once per new source
   useEffect(() => {
     if (!processingResult) return;
-    if (!sourceImageBase64 && !sourceRawText) return;
+    if (!sourceImageBase64 && !sourceRawText && !uploadedProposedExtraction?.fields.length) return;
     if (lastSourceRef.current === sourceFingerprint) return;
     lastSourceRef.current = sourceFingerprint;
     runExtraction(true);
-  }, [processingResult, sourceFingerprint, sourceImageBase64, sourceRawText, runExtraction]);
+  }, [processingResult, sourceFingerprint, sourceImageBase64, sourceRawText, uploadedProposedExtraction, runExtraction]);
 
   const handleRldUpload = async (file: File) => {
     if (!file) return;
