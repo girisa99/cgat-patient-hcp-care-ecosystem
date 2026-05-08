@@ -134,8 +134,11 @@ async function fetchDailyMed(input: any) {
 
   // Fetch the SPL XML document — DailyMed does not expose the full detail as .json.
   const splUrl = `https://dailymed.nlm.nih.gov/dailymed/services/v2/spls/${setid}.xml`;
-  const r = await fetch(splUrl, { headers: { Accept: "application/xml" } });
-  if (!r.ok) return null;
+  const r = await fetch(splUrl, { headers: { Accept: "application/xml", "User-Agent": "GenieSuite-RLD-Comparison/1.0" } });
+  if (!r.ok) {
+    console.warn("[fetch-rld-label] DailyMed SPL XML non-200:", r.status, splUrl);
+    return null;
+  }
   const xml = await r.text();
   const doc = new DOMParser().parseFromString(xml, "application/xml");
 
