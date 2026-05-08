@@ -1359,7 +1359,7 @@ Return ONLY valid JSON:
     // Handle scene analysis action with vision capabilities
     if (action === 'analyze_scene' && context?.image) {
       console.log(`[UniversalAI] Scene analysis request - Provider: ${provider}`);
-      response = await callVisionAnalysis(provider, model, prompt, systemPrompt, context.image, context);
+      response = await callVisionAnalysis(provider, model, prompt, systemPrompt, context.image, context, maxTokens);
     }
     // Route image generation based on provider preference - Direct API calls
     else if (imageGeneration) {
