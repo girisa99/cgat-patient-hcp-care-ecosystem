@@ -333,11 +333,13 @@ Return STRICT JSON only — no prose, no markdown — of shape:
     {
       "key": "snake_case_key",
       "label": "Human readable section label",
-      "proposed": { "value": "verbatim text", "confidence": 0.0-1.0, "evidence": "short quote/locator" } | null,
-      "rld":      { "value": "verbatim text", "confidence": 0.0-1.0, "evidence": "short quote/locator" } | null
+      "proposed": { "value": "verbatim text", "confidence": 0.0-1.0, "evidence": "≤80 char locator" } | null,
+      "rld":      { "value": "verbatim text", "confidence": 0.0-1.0, "evidence": "≤80 char locator" } | null
     }
   ]
 }
+
+Hard limits to keep the response compact: keep "evidence" under 80 characters; do not repeat the value in the evidence; output no commentary, no markdown fences.
 
 ${opts.rawText ? `=== OCR TEXT (may be empty) ===\n${opts.rawText.slice(0, 24000)}` : ''}`;
 
