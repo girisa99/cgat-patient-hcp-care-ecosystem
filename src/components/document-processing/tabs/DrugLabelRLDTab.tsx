@@ -61,6 +61,53 @@ const fileToBase64 = (file: File): Promise<string> =>
 
 const stripDataUrl = (s: string) => (s.includes(',') ? s.split(',')[1] : s);
 
+// Fetch any http(s) image URL and convert to base64 (no data: prefix).
+const urlToBase64 = async (url: string): Promise<string | undefined> => {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return undefined;
+    const blob = await res.blob();
+    if (!blob.type.startsWith('image/')) return undefined;
+    return await new Promise<string>((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(stripDataUrl(String(r.result)));
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
+  } catch (e) {
+    console.warn('[DrugLabelRLD] urlToBase64 failed:', e);
+    return undefined;
+  }
+};
+
+// Robust JSON extraction: strips ``` fences and finds the outermost balanced {...}
+const extractJsonObject = (raw: string): any => {
+  let s = (raw || '').trim();
+  s = s.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
+  // First try direct parse
+  try { return JSON.parse(s); } catch {}
+  // Find balanced braces
+  const start = s.indexOf('{');
+  if (start < 0) throw new Error('No JSON object found in model response');
+  let depth = 0, inStr = false, esc = false;
+  for (let i = start; i < s.length; i++) {
+    const ch = s[i];
+    if (inStr) {
+      if (esc) { esc = false; continue; }
+      if (ch === '\\') { esc = true; continue; }
+      if (ch === '"') inStr = false;
+      continue;
+    }
+    if (ch === '"') { inStr = true; continue; }
+    if (ch === '{') depth++;
+    else if (ch === '}') {
+      depth--;
+      if (depth === 0) return JSON.parse(s.slice(start, i + 1));
+    }
+  }
+  throw new Error('Unbalanced JSON in model response');
+};
+
 const norm = (s: string) => (s || '').toLowerCase().replace(/\s+/g, ' ').trim();
 
 const computeStatus = (p: Side, r: Side): RowStatus => {
