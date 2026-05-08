@@ -127,40 +127,27 @@ async function fetchDailyMed(input: any) {
   const j = await r.json();
   const data = j?.data || {};
 
-  // LOINC → our key mapping for common SPL sections
-  const LOINC_MAP: Record<string, { key: string; label: string }> = {
-    "34066-1": { key: "boxed_warning", label: "Boxed Warning" },
-    "34067-9": { key: "indications_and_usage", label: "1 Indications and Usage" },
-    "34068-7": { key: "dosage_and_administration", label: "2 Dosage and Administration" },
-    "43678-2": { key: "dosage_forms_and_strengths", label: "3 Dosage Forms and Strengths" },
-    "34070-3": { key: "contraindications", label: "4 Contraindications" },
-    "43685-7": { key: "warnings_and_precautions", label: "5 Warnings and Precautions" },
-    "34071-1": { key: "warnings", label: "Warnings" },
-    "34084-4": { key: "adverse_reactions", label: "6 Adverse Reactions" },
-    "34073-7": { key: "drug_interactions", label: "7 Drug Interactions" },
-    "43684-0": { key: "use_in_specific_populations", label: "8 Use in Specific Populations" },
-    "34088-5": { key: "pregnancy", label: "8.1 Pregnancy" },
-    "34081-0": { key: "pediatric_use", label: "8.4 Pediatric Use" },
-    "34082-8": { key: "geriatric_use", label: "8.5 Geriatric Use" },
-    "34088-3": { key: "overdosage", label: "10 Overdosage" },
-    "34089-3": { key: "description", label: "11 Description" },
-    "34090-1": { key: "clinical_pharmacology", label: "12 Clinical Pharmacology" },
-    "43679-0": { key: "mechanism_of_action", label: "12.1 Mechanism of Action" },
-    "43680-8": { key: "nonclinical_toxicology", label: "13 Nonclinical Toxicology" },
-    "34092-7": { key: "clinical_studies", label: "14 Clinical Studies" },
-    "34069-5": { key: "how_supplied", label: "16 How Supplied / Storage and Handling" },
-    "42230-3": { key: "patient_information", label: "17 Patient Counseling Information" },
-  };
-
   const fields: { key: string; label: string; value: string; evidence?: string }[] = [];
   const sections = Array.isArray(data.sections) ? data.sections : [];
 
+  // Dynamic: surface every section DailyMed returns. Derive a snake_case key
+  // from the section's title (or LOINC code as fallback) — no hardcoded mapping.
+  const slug = (s: string) =>
+    s.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 60);
+
   for (const sec of sections) {
-    const code = sec?.code || sec?.loinc_code || sec?.section_code;
-    const map = code && LOINC_MAP[code];
-    if (!map) continue;
-    const text = (sec.text || sec.section_text || sec.title_text || "").trim();
-    if (text) fields.push({ key: map.key, label: map.label, value: text, evidence: `DailyMed setid ${setid} / LOINC ${code}` });
+    const code = sec?.code || sec?.loinc_code || sec?.section_code || "";
+    const title = (sec?.title || sec?.title_text || sec?.name || "").toString().trim();
+    const text = (sec?.text || sec?.section_text || "").toString().trim();
+    if (!text) continue;
+    const key = title ? slug(title) : code ? `loinc_${slug(String(code))}` : `section_${fields.length + 1}`;
+    const label = title || (code ? `LOINC ${code}` : `Section ${fields.length + 1}`);
+    fields.push({
+      key,
+      label,
+      value: text,
+      evidence: `DailyMed setid ${setid}${code ? ` / LOINC ${code}` : ""}`,
+    });
   }
 
   if (data.title) fields.unshift({ key: "spl_title", label: "SPL Title", value: data.title });
