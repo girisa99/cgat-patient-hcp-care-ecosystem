@@ -14,6 +14,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Tag, AlertTriangle, CheckCircle2, Loader2, FileText, Sparkles,
   ShieldCheck, Upload, Image as ImageIcon, RefreshCw, Globe,
+  Search, ChevronDown, ChevronRight, Lightbulb,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
