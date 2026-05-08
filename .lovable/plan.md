@@ -1,202 +1,93 @@
 
+# Drug Label: Dynamic Proposed-vs-RLD Extraction & Comparison
 
-# Landing Page Critical Fix and Enhancement Plan
+## Problem with current behavior
 
-## Current State
+- Extraction treats everything as "Proposed" (single bag of fields). RLD is left blank in the comparison tab.
+- The RLD Comparison tab uses a fixed FDA target-field list (`drug-label.targetFields` in `src/config/documentTypes.ts`) — not the dynamic sections actually present in each label.
+- The user expects: upload once → system separates Proposed vs RLD content from the same document (or accepts a second RLD upload) → comparison tab simply shows the side-by-side result with match/mismatch/missing.
+- Document preview wasn't loading and OCR-image button hit a 2xx-but-empty edge function error.
 
-The landing page at `/genie-landing/nam` is **stuck on "Loading..."** due to build errors in `useCastAnalytics.ts` that prevent the entire app from compiling. Beyond that critical blocker, there are 12 specific improvements needed across the page sections.
+## Goal
 
-## Phase 0: Fix Build Errors (Blocker)
+One upload-driven pipeline that produces three things at the same time:
+1. A dynamic field/section list discovered from the document.
+2. Proposed-label values per field.
+3. RLD values per field (from the same doc when present, or a second RLD upload when needed).
 
-The file `src/hooks/useCastAnalytics.ts` queries columns that don't exist in the database:
+The RLD Comparison tab becomes a read-only review of that pre-computed result with verify/accept actions — no re-entry required.
 
-| Query Column Used | Actual DB Column | Table |
-|---|---|---|
-| `language` | `language_code` | `landing_page_videos` |
-| `credits_used` | `credits_amount` | `ai_credit_transactions` |
-| `feature_type` | `feature_used` | `ai_credit_transactions` |
-| `metadata` | `feature_metadata` | `ai_credit_transactions` |
+## Scope (frontend-only, drug-label doc type)
 
-Fix: Update all `.select()` calls and property references to use the correct column names.
+Files touched:
+- `src/components/document-processing/tabs/DrugLabelRLDTab.tsx` — rebuild around dynamic schema + dual-channel extraction.
+- `src/pages/DocumentProcessing.tsx` — pass through the new dual-channel extraction result; trigger the dual extraction in the drug-label branch right after the existing Stage-2 extraction completes.
+- `src/config/documentTypes.ts` — keep `drug-label.targetFields` only as a *seed/anchor list*; mark the schema as dynamic (no behavior change for other doc types).
 
----
+No DB migrations, no new edge functions, no changes outside drug-label.
 
-## Phase 1: Provider Ribbon - Increase Logo Size
+## New extraction contract
 
-**Current:** Provider logos are `w-5 h-5` (20px) -- too tiny to see brand identity.
+A single call to `ai-universal-processor` (Gemini Vision) returns:
 
-**Fix in `ProviderRibbon` component (RegionalLandingPage.tsx, line ~266-270):**
-- Increase logo images from `w-5 h-5` to `w-10 h-10` (40px)
-- Increase label text from `text-xs` to `text-sm`
-- Increase capability text from `text-[10px]` to `text-xs`
-- Increase pill padding from `px-4 py-2` to `px-5 py-3`
-- Add a subtle white border glow on hover for better visibility
-
----
-
-## Phase 2: Pipeline Visual - Make 8-Step and Responsive
-
-**Current:** 6 steps (Ideation, Script, Voice, Video, 3D/Avatar, Distribute). Missing Translation and Review steps.
-
-**Fix in `PIPELINE_STEPS` and `CinematicPipeline` (lines ~332-390):**
-- Expand to 8 steps: Ideation -> Script -> Voice -> Video -> 3D/Avatar -> Translation -> Review -> Distribute
-- Add `Languages` icon for Translation step with provider "140+ Lang"
-- Add `Shield` icon for Review step with provider "AI QA"
-- Make steps wrap properly on mobile (currently `flex-wrap` is set but arrows hide on mobile -- show vertical flow instead)
-
----
-
-## Phase 3: Metrics Consistency
-
-**Current `LANDING_METRICS` (line ~1107):**
-```
-regions: 16, subRegions: 56, languages: '140+', dialects: '50+',
-aiProviders: 19, pipelines: 206, industries: '50+'
+```json
+{
+  "documentContains": "proposed_only" | "rld_only" | "both",
+  "fields": [
+    {
+      "key": "indications_and_usage",
+      "label": "1 Indications and Usage",
+      "proposed": { "value": "...", "confidence": 0.92, "evidence": "..." } | null,
+      "rld":      { "value": "...", "confidence": 0.88, "evidence": "..." } | null
+    }
+  ]
+}
 ```
 
-**Issues:**
-- `regions: 16` but `REGION_HIERARCHY` has varying counts -- should match the 17 RegionSlug types
-- `subRegions: 56` but implementation says 62+ sub-regions
-- Missing metrics: `formats: 16` (after Phase 1 registry expansion), `blueprints: 441`, `chains: 35`
+Rules enforced in the prompt:
+- Field list is **document-driven** — the model emits only sections it actually found, plus any of the FDA seed keys when present (seed keys passed as hints, not as required output).
+- Verbatim values only; empty when not found.
+- If only one side exists in the document, the other side is `null` and the user can later upload an RLD to fill it.
 
-**Fix:** Update to match implemented values and add missing metrics used across sections.
+## UI behavior — RLD Comparison tab
 
----
+Replace the current grid with a comparison table whose **rows are the dynamic fields returned by extraction**, not a hardcoded list:
 
-## Phase 4: Hero Section - Stronger Hook, Problem, and Solutions
+```text
+┌────────────────────────┬──────────────────────────┬──────────────────────────┬──────────┬──────────┐
+│ Field (dynamic)        │ Proposed                 │ RLD                      │ Status   │ Actions  │
+├────────────────────────┼──────────────────────────┼──────────────────────────┼──────────┼──────────┤
+│ Indications and Usage  │ <verbatim text + conf %> │ <verbatim text + conf %> │ Match    │ Accept   │
+│ Boxed Warning          │ <text>                   │ — missing —              │ Missing  │ Add RLD  │
+│ Dosage and Admin.      │ <text A> [diff]          │ <text B> [diff]          │ Mismatch │ Accept   │
+└────────────────────────┴──────────────────────────┴──────────────────────────┴──────────┴──────────┘
+```
 
-**Current:** Hero has 4 slides (platform, pipeline, language, transcreation). The hook is decent but doesn't call out industry pain points strongly enough.
+- Status is computed locally (normalized exact = Match, substring = Partial, both present and different = Mismatch, one side empty = Missing in proposed/RLD). No second AI round-trip required for basic mapping.
+- Inline word-level diff stays for Mismatch/Partial rows (already implemented).
+- Source document preview stays at the top, with PDF iframe + image fallback (already fixed).
+- New compact toolbar:
+  - "Re-extract" — re-runs dual extraction on the current document.
+  - "Upload RLD separately" — adds a second image/PDF; runs extraction in `rld_only` mode and merges values into the same dynamic field rows.
+  - "Accept all matches" / per-row "Accept" — sets a verified flag (kept in component state + sessionStorage, no DB write in this scope).
+- Confidence badges per side per field (uses returned `confidence`).
+- Summary bar: `<dynamic field count>` fields · `<matched>` matched · `<mismatch>` mismatched · `<missing>` missing.
 
-**Enhancement to slide descriptions (lines ~638-670):**
-- **Slide 1 (Platform):** Add problem statement: "Agencies charge $50K+ and take months. AI tools give you robot-sounding content. Genie Suite does both -- quality AND speed."
-- **Slide 2 (Pipeline):** Add industry challenge: "Your competitors are already producing 10x more content. Every day without automation is market share lost."
-- **Slide 3 (Language):** Strengthen with: "68% of consumers won't buy if content isn't in their language. Translation isn't enough -- transcreation is the difference."
-- **Slide 4 (Transcreation):** Add ROI hook: "Brands using transcreation see 3x higher engagement vs translation-only campaigns."
+## Trigger flow (auto-run, no extra clicks)
 
----
+1. User uploads document on Upload tab. Existing OCR + Stage-2 extraction runs as today.
+2. When `selectedDocType === 'drug-label'` and Stage-2 completes, `DocumentProcessing.tsx` fires the new `extractProposedAndRld(file|imageUrl)` helper.
+3. Result is stored on `processingResult.dualExtraction` (new optional field on the existing in-memory `ProcessingResult` shape — already loose-typed, no DB schema change).
+4. RLD Comparison tab reads `processingResult.dualExtraction` directly and renders. If the tab is opened before extraction finishes, it shows a loading state.
 
-## Phase 5: Universal Enrichment Integration
+## Bug fixes folded in
 
-**Current:** The landing page does NOT use `useUniversalEnrichment`. Content is hardcoded in `regionalLandingConfig.ts`.
+- OCR image button: continue using raw base64 (already fixed) and surface the actual edge-function error body in the toast instead of a generic message.
+- PDF preview: keep iframe path (already fixed).
+- Persisted state key `drugLabel_rldFields` is migrated to a new key `drugLabel_dualExtraction_v2` so old single-channel state doesn't leak into the new view.
 
-**Enhancement:** Wire `useUniversalEnrichment` into the landing page so that when a user selects a product context via `?product=spark`, the enrichment data (brand, audience, messaging) dynamically updates:
-- Hero messaging adapts to product positioning
-- Industry showcases prioritize industries relevant to the product
-- CTA text reflects product-specific value props
+## Out of scope (suggest, do not build now)
 
-Add to `RegionalLandingPage` main component:
-- Import and call `useUniversalEnrichment` with product context from URL params
-- Merge enrichment messaging into hero slides when available
-- Fall back to hardcoded config when no product context
-
----
-
-## Phase 6: Output Format Showcase (Video, Podcast, PPT, Social)
-
-**Current:** The page mentions video heavily but doesn't showcase other output formats.
-
-**Add new section between Products and Industry Showcases:**
-- "What You Can Create" section showing 6 format cards:
-  - Video (Explainer, Social Short, Brand Anthem)
-  - Podcast (Expert Interview, Audio Drama)
-  - Presentation (Investor Pitch, Sales Deck)
-  - Website (Landing Page, Microsite)
-  - Social (Instagram Reel, LinkedIn Post, TikTok)
-  - Document (Whitepaper, Case Study)
-- Each card shows: format icon, 2-3 sub-formats, "Powered by" pipeline badge
-- Links to sign up to try each format
-
----
-
-## Phase 7: Social Connectivity Section
-
-**Current:** No social media links, community, or social proof section.
-
-**Add new section after DogfoodingProof:**
-- Social links row (LinkedIn, Twitter/X, YouTube, Discord, Instagram)
-- "Join the Community" CTA
-- Newsletter subscribe form with email input + "Subscribe" button (stores in DB, does NOT process payment)
-- Social proof: "Trusted by teams at..." with placeholder logos
-
----
-
-## Phase 8: Newsletter/Register Section
-
-**Current:** CTA footer only has "Start Creating Free" and "Schedule Demo" -- no email capture.
-
-**Add to `RegionalCTAFooter` (lines ~1316-1382):**
-- Email input field with "Get Early Access" / "Subscribe for Updates" button
-- Small text: "No spam. Unsubscribe anytime. Regional content updates."
-- Store email in a `newsletter_subscribers` table (or existing leads table)
-- Note: Pricing and payment integration is on hold per user instruction
-
----
-
-## Phase 9: SEO Improvements
-
-**Current SEO is good but missing:**
-- No `<meta name="theme-color">` tag
-- No FAQ structured data (FAQPage schema)
-- No BreadcrumbList schema
-- Product section has no `itemscope` markup
-
-**Fix in `RegionalSEOHead`:**
-- Add theme-color meta tag
-- Add FAQ structured data with 3-4 common questions
-- Add BreadcrumbList: Home > Genie Landing > {Region}
-- Ensure all images have descriptive alt text (some just say "Genie Suite")
-
----
-
-## Phase 10: CTA Differentiation
-
-**Current:** Primary and secondary CTAs look similar in weight.
-
-**Fix:**
-- Primary CTA: Keep gradient button style, add animated pulse ring
-- Secondary CTA: Change to outline with play icon for "See It In Action" -- link to a product demo video section (anchor to #products)
-- Add tertiary CTA: "Schedule a Demo" as a text link with calendar icon
-
----
-
-## Phase 11: Navbar Enhancement
-
-**Current navbar (lines ~1387-1448):** Only has Products, Pricing, Explore, Region Switcher, and primary CTA.
-
-**Add:**
-- "Formats" link (anchor to new format showcase section)
-- "Industries" link (anchor to industry showcases)
-- "Community" link (anchor to social section)
-- Mobile menu should include all links
-
----
-
-## Implementation Order
-
-| Step | What | Impact |
-|------|------|--------|
-| 1 | Fix `useCastAnalytics.ts` build errors | Unblocks entire app |
-| 2 | Increase provider ribbon logo sizes | Visual impact, quick win |
-| 3 | Update `LANDING_METRICS` to consistent values | Data accuracy |
-| 4 | Expand pipeline visual to 8 steps | Completeness |
-| 5 | Strengthen hero hook/problem/solution copy | Conversion |
-| 6 | Add output format showcase section | Feature visibility |
-| 7 | Add social connectivity + subscribe section | Engagement |
-| 8 | Wire Universal Enrichment for dynamic messaging | Dynamic content |
-| 9 | SEO improvements | Discoverability |
-| 10 | CTA and navbar enhancements | Navigation + conversion |
-
-## Files Changed
-
-| File | Change |
-|------|--------|
-| `src/hooks/useCastAnalytics.ts` | Fix column names (language->language_code, credits_used->credits_amount, etc.) |
-| `src/components/landing/RegionalLandingPage.tsx` | Provider ribbon sizes, pipeline steps, metrics, hero copy, CTA, navbar, new sections |
-| `src/components/landing/OutputFormatShowcase.tsx` | New component for format cards |
-| `src/components/landing/SocialConnectSection.tsx` | New component for social + subscribe |
-
-## What We Do NOT Change
-- No pricing or payment implementation (on hold per user)
-- No new edge functions (reuse existing)
-- No changes to the compliance gate logic
-- No changes to the product showcase component (already comprehensive)
+- Persisting accepted comparison results into a DB table (e.g. `drug_label_rld_comparisons`) — recommend a follow-up migration once the UX is validated.
+- Reusing this dynamic dual-channel schema for non-drug-label doc types.
+- Multi-page PDF page-by-page extraction (current call uses single-image / first-page; large PDFs may need chunking later).
