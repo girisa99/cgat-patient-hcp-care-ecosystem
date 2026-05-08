@@ -34,7 +34,8 @@ interface DualField {
   key: string;
   label: string;
   proposed: Side;
-  rld: Side;
+  rld: Side;       // FDA openFDA-sourced (or manual upload)
+  dailymed: Side;  // DailyMed-sourced
   accepted?: boolean;
 }
 
@@ -44,7 +45,7 @@ interface DualExtraction {
   rawAiSummary?: string;
 }
 
-type RowStatus = 'match' | 'partial' | 'mismatch' | 'missing_proposed' | 'missing_rld' | 'missing_both';
+type RowStatus = 'match' | 'partial' | 'mismatch' | 'missing_proposed' | 'missing_rld' | 'missing_dailymed' | 'missing_both' | 'missing_all';
 
 interface Props {
   processingResult: ProcessingResult | null;
