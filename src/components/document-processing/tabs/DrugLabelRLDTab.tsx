@@ -166,13 +166,27 @@ const computeStatus = (p: Side, r: Side): RowStatus => {
   return 'mismatch';
 };
 
+// Tri-source overall status — considers Proposed vs FDA vs DailyMed together.
+const computeTriStatus = (p: Side, r: Side, d: Side): RowStatus => {
+  const has = { p: !!p?.value?.trim(), r: !!r?.value?.trim(), d: !!d?.value?.trim() };
+  if (!has.p && !has.r && !has.d) return 'missing_all';
+  if (!has.p) return 'missing_proposed';
+  if (!has.r && !has.d) return 'missing_both';
+  if (!has.r) return 'missing_rld';
+  if (!has.d) return 'missing_dailymed';
+  // All three present — status against FDA (primary RLD) drives it
+  return computeStatus(p, r);
+};
+
 const STATUS_BADGE: Record<RowStatus, { label: string; cls: string }> = {
   match: { label: 'Match', cls: 'bg-green-600 text-white' },
   partial: { label: 'Partial', cls: 'bg-yellow-500 text-black' },
   mismatch: { label: 'Mismatch', cls: 'bg-orange-600 text-white' },
   missing_proposed: { label: 'Missing in Proposed', cls: 'bg-red-600 text-white' },
-  missing_rld: { label: 'Missing in RLD', cls: 'bg-red-500 text-white' },
-  missing_both: { label: 'Missing both', cls: 'bg-muted text-muted-foreground' },
+  missing_rld: { label: 'Missing in FDA', cls: 'bg-red-500 text-white' },
+  missing_dailymed: { label: 'Missing in DailyMed', cls: 'bg-red-400 text-white' },
+  missing_both: { label: 'Missing in FDA & DailyMed', cls: 'bg-red-700 text-white' },
+  missing_all: { label: 'Missing everywhere', cls: 'bg-muted text-muted-foreground' },
 };
 
 // Word-level diff (LCS) for inline highlighting
