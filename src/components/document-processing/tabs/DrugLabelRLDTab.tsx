@@ -335,6 +335,7 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
   const [isUploadingRld, setIsUploadingRld] = useState(false);
   const [isFetchingFda, setIsFetchingFda] = useState(false);
   const [fdaSource, setFdaSource] = useState<string | null>(null);
+  const [inspectKey, setInspectKey] = useState<string | null>(null);
   const lastSourceRef = useRef<string>('');
 
   // Persist
