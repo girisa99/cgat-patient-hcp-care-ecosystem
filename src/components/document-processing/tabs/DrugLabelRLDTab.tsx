@@ -550,7 +550,16 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
   }, [extraction]);
 
   const [sourceImageBase64, setSourceImageBase64] = useState<string | undefined>(undefined);
-  const uploadedProposedExtraction = useMemo(() => buildUploadedProposedExtraction(processingResult), [processingResult]);
+  const extractedFieldsSignature = useMemo(() => {
+    const entries = Object.entries(processingResult?.extractedFields || {})
+      .map(([k, v]: [string, any]) => [k, v?.value ?? v?.confidence ?? v])
+      .sort(([a], [b]) => String(a).localeCompare(String(b)));
+    return JSON.stringify(entries);
+  }, [processingResult?.extractedFields]);
+  const uploadedProposedExtraction = useMemo(
+    () => buildUploadedProposedExtraction(processingResult),
+    [extractedFieldsSignature],
+  );
 
   // Resolve image to base64 whether it's a data URL or a remote (Supabase) URL.
   useEffect(() => {
@@ -572,9 +581,8 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
 
   // Fingerprint to detect new document and re-run extraction automatically
   const sourceFingerprint = useMemo(() => {
-    const fieldSignature = JSON.stringify(Object.entries(processingResult?.extractedFields || {}).map(([k, v]: [string, any]) => [k, v?.value ?? v]));
-    return `${processingResult?.fileName || ''}|${sourceRawText.length}|${(sourceImageBase64 || '').length}|${fieldSignature.length}`;
-  }, [processingResult?.fileName, processingResult?.extractedFields, sourceRawText, sourceImageBase64]);
+    return `${processingResult?.fileName || ''}|${sourceRawText.length}|${extractedFieldsSignature}`;
+  }, [processingResult?.fileName, sourceRawText.length, extractedFieldsSignature]);
 
   const runExtraction = useCallback(async (silent = false) => {
     if (!sourceImageBase64 && !sourceRawText && !uploadedProposedExtraction?.fields.length) {
@@ -620,6 +628,11 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
     if (!sourceImageBase64 && !sourceRawText && !uploadedProposedExtraction?.fields.length) return;
     if (lastSourceRef.current === sourceFingerprint) return;
     lastSourceRef.current = sourceFingerprint;
+    if (uploadedProposedExtraction?.fields.length) {
+      setExtraction(uploadedProposedExtraction);
+      setExtractError(null);
+      return;
+    }
     runExtraction(true);
   }, [processingResult, sourceFingerprint, sourceImageBase64, sourceRawText, uploadedProposedExtraction, runExtraction]);
 
