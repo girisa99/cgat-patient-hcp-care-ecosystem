@@ -759,7 +759,9 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
                 <Badge className="bg-green-600 text-white">{stats.match} match</Badge>
                 <Badge className="bg-yellow-500 text-black">{stats.partial} partial</Badge>
                 <Badge className="bg-orange-600 text-white">{stats.mismatch} mismatch</Badge>
-                <Badge className="bg-red-600 text-white">{stats.missing} missing</Badge>
+                <Badge className="bg-red-600 text-white">{stats.missingProposed} missing in Proposed</Badge>
+                <Badge className="bg-red-500 text-white">{stats.missingFda} missing in FDA</Badge>
+                <Badge className="bg-red-400 text-white">{stats.missingDm} missing in DailyMed</Badge>
                 <div className="ml-auto">
                   <Button size="sm" variant="ghost" onClick={acceptAllMatches}>
                     <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Accept all matches
@@ -769,30 +771,31 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
 
               <div className="rounded-md border overflow-hidden">
                 <div className="grid grid-cols-12 bg-muted px-3 py-2 text-xs font-semibold gap-2">
-                  <div className="col-span-3">Field (dynamic)</div>
-                  <div className="col-span-4 flex items-center gap-2"><FileText className="h-3.5 w-3.5" /> Proposed</div>
-                  <div className="col-span-4 flex items-center gap-2"><ShieldCheck className="h-3.5 w-3.5" /> RLD</div>
+                  <div className="col-span-2">Field (dynamic)</div>
+                  <div className="col-span-3 flex items-center gap-2"><FileText className="h-3.5 w-3.5" /> Proposed</div>
+                  <div className="col-span-3 flex items-center gap-2"><ShieldCheck className="h-3.5 w-3.5" /> FDA RLD (openFDA)</div>
+                  <div className="col-span-3 flex items-center gap-2"><Globe className="h-3.5 w-3.5" /> DailyMed</div>
                   <div className="col-span-1 text-center">Status</div>
                 </div>
                 <div className="divide-y max-h-[560px] overflow-y-auto">
                   {fields.map(f => {
-                    const status = computeStatus(f.proposed, f.rld);
+                    const status = computeTriStatus(f.proposed, f.rld, f.dailymed);
                     const meta = STATUS_BADGE[status];
                     const showDiff = (status === 'mismatch' || status === 'partial') && f.proposed?.value && f.rld?.value;
                     const diff = showDiff ? diffWords(f.proposed!.value, f.rld!.value) : null;
                     const isOpen = inspectKey === f.key;
-                    const explanation = isOpen ? explainMatch(f.proposed, f.rld, status) : null;
+                    const explanation = isOpen ? explainMatch(f.proposed, f.rld, computeStatus(f.proposed, f.rld)) : null;
                     const altForRld = isOpen && f.proposed?.value ? findBestAlternate(f, fields, 'rld') : null;
                     const altForProposed = isOpen && f.rld?.value ? findBestAlternate(f, fields, 'proposed') : null;
                     return (
                       <React.Fragment key={f.key}>
                       <div className={`grid grid-cols-12 px-3 py-2 gap-2 text-xs items-start hover:bg-muted/40 ${f.accepted ? 'bg-green-50/50 dark:bg-green-950/10' : ''}`}>
-                        <div className="col-span-3 pt-1">
+                        <div className="col-span-2 pt-1">
                           <div className="font-medium">{f.label}</div>
-                          <div className="text-[10px] text-muted-foreground font-mono">{f.key}</div>
+                          <div className="text-[10px] text-muted-foreground font-mono break-all">{f.key}</div>
                           {f.accepted && <Badge variant="outline" className="text-[10px] mt-1">accepted</Badge>}
                         </div>
-                        <div className="col-span-4">
+                        <div className="col-span-3">
                           {f.proposed?.value ? (
                             <div className="space-y-1">
                               <div className="font-mono text-xs leading-snug">
@@ -808,20 +811,30 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
                             <span className="text-[11px] text-orange-600 dark:text-orange-400 italic">— not in proposed —</span>
                           )}
                         </div>
-                        <div className="col-span-4">
+                        <div className="col-span-3">
                           {f.rld?.value ? (
                             <div className="space-y-1">
                               <div className="font-mono text-xs leading-snug">
                                 {diff ? <DiffText parts={diff.right} side="right" /> : f.rld.value}
                               </div>
-                              {typeof f.rld.confidence === 'number' && (
-                                <Badge variant={f.rld.confidence >= 0.8 ? 'default' : f.rld.confidence >= 0.5 ? 'secondary' : 'destructive'} className="text-[10px]">
-                                  {Math.round(f.rld.confidence * 100)}%
-                                </Badge>
+                              {f.rld.evidence && (
+                                <div className="text-[10px] text-muted-foreground italic truncate" title={f.rld.evidence}>{f.rld.evidence}</div>
                               )}
                             </div>
                           ) : (
-                            <span className="text-[11px] text-blue-600 dark:text-blue-400 italic">— not in RLD —</span>
+                            <span className="text-[11px] text-red-600 dark:text-red-400 italic">— missing in FDA RLD —</span>
+                          )}
+                        </div>
+                        <div className="col-span-3">
+                          {f.dailymed?.value ? (
+                            <div className="space-y-1">
+                              <div className="font-mono text-xs leading-snug whitespace-pre-wrap break-words">{f.dailymed.value}</div>
+                              {f.dailymed.evidence && (
+                                <div className="text-[10px] text-muted-foreground italic truncate" title={f.dailymed.evidence}>{f.dailymed.evidence}</div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-[11px] text-red-600 dark:text-red-400 italic">— missing in DailyMed —</span>
                           )}
                         </div>
                         <div className="col-span-1 flex flex-col items-center gap-1 pt-1">
