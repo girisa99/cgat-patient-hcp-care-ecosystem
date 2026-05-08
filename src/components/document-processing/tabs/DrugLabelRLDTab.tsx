@@ -80,17 +80,22 @@ const urlToBase64 = async (url: string): Promise<string | undefined> => {
   }
 };
 
-// Robust JSON extraction: strips ``` fences and finds the outermost balanced {...}
+// Robust JSON extraction: strips ``` fences, finds the outermost {...},
+// and repairs truncation by closing open strings/arrays/objects, then
+// trimming any trailing partial element.
 const extractJsonObject = (raw: string): any => {
   let s = (raw || '').trim();
   s = s.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
-  // First try direct parse
   try { return JSON.parse(s); } catch {}
-  // Find balanced braces
+
   const start = s.indexOf('{');
   if (start < 0) throw new Error('No JSON object found in model response');
-  let depth = 0, inStr = false, esc = false;
-  for (let i = start; i < s.length; i++) {
+  s = s.slice(start);
+
+  // Walk and track structural state
+  const stack: string[] = []; // '{' or '['
+  let inStr = false, esc = false, lastSafeEnd = -1;
+  for (let i = 0; i < s.length; i++) {
     const ch = s[i];
     if (inStr) {
       if (esc) { esc = false; continue; }
@@ -99,13 +104,37 @@ const extractJsonObject = (raw: string): any => {
       continue;
     }
     if (ch === '"') { inStr = true; continue; }
-    if (ch === '{') depth++;
-    else if (ch === '}') {
-      depth--;
-      if (depth === 0) return JSON.parse(s.slice(start, i + 1));
+    if (ch === '{' || ch === '[') stack.push(ch);
+    else if (ch === '}' || ch === ']') {
+      stack.pop();
+      if (stack.length === 0) { lastSafeEnd = i; break; }
     }
   }
-  throw new Error('Unbalanced JSON in model response');
+
+  // Fully balanced
+  if (lastSafeEnd >= 0) {
+    try { return JSON.parse(s.slice(0, lastSafeEnd + 1)); } catch {}
+  }
+
+  // --- Repair truncated JSON ---
+  let repaired = s;
+  // 1. Close any open string
+  if (inStr) repaired += '"';
+  // 2. Drop trailing comma / colon / partial token (keys, dangling commas)
+  repaired = repaired.replace(/[,:\s]*"[^"]*$/g, '');
+  repaired = repaired.replace(/[,:\s]+$/g, '');
+  // 3. Close brackets/braces in reverse order
+  while (stack.length) {
+    const top = stack.pop();
+    repaired += top === '{' ? '}' : ']';
+  }
+  try {
+    const parsed = JSON.parse(repaired);
+    console.warn('[DrugLabelRLD] JSON was truncated; recovered partial result.');
+    return parsed;
+  } catch (e: any) {
+    throw new Error('Unbalanced JSON in model response (repair failed: ' + e.message + ')');
+  }
 };
 
 const norm = (s: string) => (s || '').toLowerCase().replace(/\s+/g, ' ').trim();
