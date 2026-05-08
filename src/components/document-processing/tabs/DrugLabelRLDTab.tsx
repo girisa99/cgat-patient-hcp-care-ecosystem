@@ -61,6 +61,53 @@ const fileToBase64 = (file: File): Promise<string> =>
 
 const stripDataUrl = (s: string) => (s.includes(',') ? s.split(',')[1] : s);
 
+// Fetch any http(s) image URL and convert to base64 (no data: prefix).
+const urlToBase64 = async (url: string): Promise<string | undefined> => {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return undefined;
+    const blob = await res.blob();
+    if (!blob.type.startsWith('image/')) return undefined;
+    return await new Promise<string>((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(stripDataUrl(String(r.result)));
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
+  } catch (e) {
+    console.warn('[DrugLabelRLD] urlToBase64 failed:', e);
+    return undefined;
+  }
+};
+
+// Robust JSON extraction: strips ``` fences and finds the outermost balanced {...}
+const extractJsonObject = (raw: string): any => {
+  let s = (raw || '').trim();
+  s = s.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
+  // First try direct parse
+  try { return JSON.parse(s); } catch {}
+  // Find balanced braces
+  const start = s.indexOf('{');
+  if (start < 0) throw new Error('No JSON object found in model response');
+  let depth = 0, inStr = false, esc = false;
+  for (let i = start; i < s.length; i++) {
+    const ch = s[i];
+    if (inStr) {
+      if (esc) { esc = false; continue; }
+      if (ch === '\\') { esc = true; continue; }
+      if (ch === '"') inStr = false;
+      continue;
+    }
+    if (ch === '"') { inStr = true; continue; }
+    if (ch === '{') depth++;
+    else if (ch === '}') {
+      depth--;
+      if (depth === 0) return JSON.parse(s.slice(start, i + 1));
+    }
+  }
+  throw new Error('Unbalanced JSON in model response');
+};
+
 const norm = (s: string) => (s || '').toLowerCase().replace(/\s+/g, ' ').trim();
 
 const computeStatus = (p: Side, r: Side): RowStatus => {
@@ -278,12 +325,15 @@ ${opts.rawText ? `=== OCR TEXT (may be empty) ===\n${opts.rawText.slice(0, 24000
   const { data, error } = await supabase.functions.invoke('ai-universal-processor', { body });
   if (error) throw new Error(error.message || 'Extraction failed');
   const content: string = data?.content || '';
-  const m = content.match(/\{[\s\S]*\}/);
-  if (!m) throw new Error('Model did not return JSON');
+  if (!content.trim()) throw new Error('Empty response from extraction model');
 
   let parsed: any;
-  try { parsed = JSON.parse(m[0]); } catch (e: any) {
-    throw new Error('Failed to parse extraction JSON: ' + e.message);
+  try {
+    parsed = extractJsonObject(content);
+  } catch (e: any) {
+    const preview = content.slice(0, 240).replace(/\s+/g, ' ');
+    console.error('[DrugLabelRLD] JSON parse failed. Raw content:', content);
+    throw new Error(`${e.message}. Model said: "${preview}${content.length > 240 ? '…' : ''}"`);
   }
   const fields: DualField[] = Array.isArray(parsed.fields) ? parsed.fields.map((f: any) => ({
     key: String(f.key || '').trim() || `field_${Math.random().toString(36).slice(2, 8)}`,
@@ -346,10 +396,22 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
     } catch {}
   }, [extraction]);
 
-  const sourceImageBase64 = useMemo(() => {
+  const [sourceImageBase64, setSourceImageBase64] = useState<string | undefined>(undefined);
+
+  // Resolve image to base64 whether it's a data URL or a remote (Supabase) URL.
+  useEffect(() => {
+    let cancelled = false;
     const url = processingResult?.imageUrl || '';
-    if (url.startsWith('data:image')) return stripDataUrl(url);
-    return undefined;
+    if (!url) { setSourceImageBase64(undefined); return; }
+    if (url.startsWith('data:image')) {
+      setSourceImageBase64(stripDataUrl(url));
+      return;
+    }
+    (async () => {
+      const b64 = await urlToBase64(url);
+      if (!cancelled) setSourceImageBase64(b64);
+    })();
+    return () => { cancelled = true; };
   }, [processingResult?.imageUrl]);
 
   const sourceRawText = (processingResult?.rawText || '').trim();
