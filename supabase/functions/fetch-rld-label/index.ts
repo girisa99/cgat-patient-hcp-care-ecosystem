@@ -175,27 +175,28 @@ serve(async (req) => {
       );
     }
 
-    let result: any = null;
-    const order = prefer === "dailymed" ? ["dailymed", "openfda"] : ["openfda", "dailymed"];
+    // Fetch BOTH sources in parallel — caller needs to compare each independently.
+    const [openFdaRes, dailyMedRes] = await Promise.allSettled([
+      fetchOpenFda({ brand_name, generic_name, ndc, application_number }),
+      fetchDailyMed({ brand_name, generic_name, ndc, setid }),
+    ]);
 
-    for (const src of order) {
-      try {
-        if (src === "openfda") result = await fetchOpenFda({ brand_name, generic_name, ndc, application_number });
-        else result = await fetchDailyMed({ brand_name, generic_name, ndc, setid });
-      } catch (e) {
-        console.warn(`[fetch-rld-label] ${src} threw:`, (e as Error).message);
-      }
-      if (result && result.fields?.length) break;
-    }
+    const openFda = openFdaRes.status === "fulfilled" ? openFdaRes.value : null;
+    const dailyMed = dailyMedRes.status === "fulfilled" ? dailyMedRes.value : null;
+    const openFdaError = openFdaRes.status === "rejected" ? (openFdaRes.reason as Error)?.message : null;
+    const dailyMedError = dailyMedRes.status === "rejected" ? (dailyMedRes.reason as Error)?.message : null;
 
-    if (!result || !result.fields?.length) {
+    if (!openFda && !dailyMed) {
       return new Response(
-        JSON.stringify({ error: "No RLD label found in openFDA or DailyMed for the provided identifiers" }),
+        JSON.stringify({
+          error: "No RLD label found in openFDA or DailyMed for the provided identifiers",
+          openFdaError, dailyMedError,
+        }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    return new Response(JSON.stringify(result), {
+    return new Response(JSON.stringify({ openFda, dailyMed, openFdaError, dailyMedError }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

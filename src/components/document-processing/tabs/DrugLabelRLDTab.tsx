@@ -34,7 +34,8 @@ interface DualField {
   key: string;
   label: string;
   proposed: Side;
-  rld: Side;
+  rld: Side;       // FDA openFDA-sourced (or manual upload)
+  dailymed: Side;  // DailyMed-sourced
   accepted?: boolean;
 }
 
@@ -44,7 +45,7 @@ interface DualExtraction {
   rawAiSummary?: string;
 }
 
-type RowStatus = 'match' | 'partial' | 'mismatch' | 'missing_proposed' | 'missing_rld' | 'missing_both';
+type RowStatus = 'match' | 'partial' | 'mismatch' | 'missing_proposed' | 'missing_rld' | 'missing_dailymed' | 'missing_both' | 'missing_all';
 
 interface Props {
   processingResult: ProcessingResult | null;
@@ -165,13 +166,27 @@ const computeStatus = (p: Side, r: Side): RowStatus => {
   return 'mismatch';
 };
 
+// Tri-source overall status — considers Proposed vs FDA vs DailyMed together.
+const computeTriStatus = (p: Side, r: Side, d: Side): RowStatus => {
+  const has = { p: !!p?.value?.trim(), r: !!r?.value?.trim(), d: !!d?.value?.trim() };
+  if (!has.p && !has.r && !has.d) return 'missing_all';
+  if (!has.p) return 'missing_proposed';
+  if (!has.r && !has.d) return 'missing_both';
+  if (!has.r) return 'missing_rld';
+  if (!has.d) return 'missing_dailymed';
+  // All three present — status against FDA (primary RLD) drives it
+  return computeStatus(p, r);
+};
+
 const STATUS_BADGE: Record<RowStatus, { label: string; cls: string }> = {
   match: { label: 'Match', cls: 'bg-green-600 text-white' },
   partial: { label: 'Partial', cls: 'bg-yellow-500 text-black' },
   mismatch: { label: 'Mismatch', cls: 'bg-orange-600 text-white' },
   missing_proposed: { label: 'Missing in Proposed', cls: 'bg-red-600 text-white' },
-  missing_rld: { label: 'Missing in RLD', cls: 'bg-red-500 text-white' },
-  missing_both: { label: 'Missing both', cls: 'bg-muted text-muted-foreground' },
+  missing_rld: { label: 'Missing in FDA', cls: 'bg-red-500 text-white' },
+  missing_dailymed: { label: 'Missing in DailyMed', cls: 'bg-red-400 text-white' },
+  missing_both: { label: 'Missing in FDA & DailyMed', cls: 'bg-red-700 text-white' },
+  missing_all: { label: 'Missing everywhere', cls: 'bg-muted text-muted-foreground' },
 };
 
 // Word-level diff (LCS) for inline highlighting
@@ -393,6 +408,7 @@ ${opts.rawText ? `=== OCR TEXT (may be empty) ===\n${opts.rawText.slice(0, 24000
       confidence: typeof f.rld.confidence === 'number' ? f.rld.confidence : undefined,
       evidence: f.rld.evidence,
     } : null,
+    dailymed: null,
   })) : [];
 
   return {
@@ -401,7 +417,7 @@ ${opts.rawText ? `=== OCR TEXT (may be empty) ===\n${opts.rawText.slice(0, 24000
   };
 }
 
-// Merge a second dual-extraction (from a separate RLD upload) into the existing one
+// Merge a second dual-extraction (from a separate manual RLD upload) into the existing one
 function mergeRldUpload(base: DualExtraction, addition: DualExtraction): DualExtraction {
   const map = new Map<string, DualField>(base.fields.map(f => [f.key, { ...f }]));
   for (const f of addition.fields) {
@@ -412,10 +428,38 @@ function mergeRldUpload(base: DualExtraction, addition: DualExtraction): DualExt
       existing.rld = incoming;
       existing.label = existing.label || f.label;
     } else {
-      map.set(f.key, { key: f.key, label: f.label, proposed: null, rld: incoming });
+      map.set(f.key, { key: f.key, label: f.label, proposed: null, rld: incoming, dailymed: null });
     }
   }
   return { documentContains: 'both', fields: Array.from(map.values()) };
+}
+
+// Merge external sources (openFDA → rld column, DailyMed → dailymed column) without losing the other.
+function mergeExternalSources(
+  base: DualExtraction | null,
+  openFdaFields: { key: string; label: string; value: string; evidence?: string }[],
+  dailyMedFields: { key: string; label: string; value: string; evidence?: string }[],
+): DualExtraction {
+  const map = new Map<string, DualField>(
+    (base?.fields || []).map(f => [f.key, { ...f }]),
+  );
+  const ensure = (key: string, label: string): DualField => {
+    let row = map.get(key);
+    if (!row) {
+      row = { key, label, proposed: null, rld: null, dailymed: null };
+      map.set(key, row);
+    }
+    return row;
+  };
+  for (const f of openFdaFields) {
+    const row = ensure(f.key, f.label || f.key);
+    row.rld = { value: f.value, confidence: 0.95, evidence: f.evidence || 'openFDA' };
+  }
+  for (const f of dailyMedFields) {
+    const row = ensure(f.key, f.label || f.key);
+    row.dailymed = { value: f.value, confidence: 0.95, evidence: f.evidence || 'DailyMed' };
+  }
+  return { documentContains: base?.documentContains || 'rld_only', fields: Array.from(map.values()) };
 }
 
 // ---------- Component ----------
@@ -548,19 +592,30 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
       const { data, error } = await supabase.functions.invoke('fetch-rld-label', {
         body: proposedIdentifiers,
       });
-      if (error) throw new Error(error.message || 'FDA lookup failed');
-      if (!data?.fields?.length) throw new Error(data?.error || 'No RLD label found');
+      if (error) throw new Error(error.message || 'FDA / DailyMed lookup failed');
+      const openFda = data?.openFda;
+      const dailyMed = data?.dailyMed;
+      if (!openFda && !dailyMed) {
+        throw new Error(data?.error || 'No RLD label found in openFDA or DailyMed');
+      }
 
-      const additionFields: DualField[] = data.fields.map((f: any) => ({
-        key: f.key,
-        label: f.label || f.key,
-        proposed: null,
-        rld: { value: f.value, confidence: 0.95, evidence: f.evidence || data.source },
-      }));
-      const addition: DualExtraction = { documentContains: 'rld_only', fields: additionFields };
-      setExtraction(prev => prev ? mergeRldUpload(prev, addition) : addition);
-      setFdaSource(`${data.source} · ${data.identifier}`);
-      toast.success(`RLD pulled from ${data.source} — ${data.fields.length} fields merged`);
+      setExtraction(prev => mergeExternalSources(
+        prev,
+        openFda?.fields || [],
+        dailyMed?.fields || [],
+      ));
+
+      const sourceLabel = [
+        openFda ? `openFDA (${openFda.identifier})` : null,
+        dailyMed ? `DailyMed (${dailyMed.identifier})` : null,
+      ].filter(Boolean).join(' + ');
+      setFdaSource(sourceLabel);
+
+      const fdaCount = openFda?.fields?.length || 0;
+      const dmCount = dailyMed?.fields?.length || 0;
+      toast.success(`Fetched ${fdaCount} FDA fields and ${dmCount} DailyMed fields`);
+      if (data?.openFdaError) toast.warning(`openFDA: ${data.openFdaError}`);
+      if (data?.dailyMedError) toast.warning(`DailyMed: ${data.dailyMedError}`);
     } catch (e: any) {
       console.error('[DrugLabelRLD] FDA fetch failed:', e);
       toast.error(e?.message || 'FDA / DailyMed lookup failed');
@@ -571,13 +626,15 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
 
   const fields = extraction?.fields || [];
   const stats = useMemo(() => {
-    const counts = { total: fields.length, match: 0, partial: 0, mismatch: 0, missing: 0 };
+    const counts = { total: fields.length, match: 0, partial: 0, mismatch: 0, missingFda: 0, missingDm: 0, missingProposed: 0 };
     fields.forEach(f => {
-      const s = computeStatus(f.proposed, f.rld);
+      const s = computeTriStatus(f.proposed, f.rld, f.dailymed);
       if (s === 'match') counts.match++;
       else if (s === 'partial') counts.partial++;
       else if (s === 'mismatch') counts.mismatch++;
-      else counts.missing++;
+      if (!f.rld?.value) counts.missingFda++;
+      if (!f.dailymed?.value) counts.missingDm++;
+      if (!f.proposed?.value) counts.missingProposed++;
     });
     return counts;
   }, [fields]);
@@ -702,7 +759,9 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
                 <Badge className="bg-green-600 text-white">{stats.match} match</Badge>
                 <Badge className="bg-yellow-500 text-black">{stats.partial} partial</Badge>
                 <Badge className="bg-orange-600 text-white">{stats.mismatch} mismatch</Badge>
-                <Badge className="bg-red-600 text-white">{stats.missing} missing</Badge>
+                <Badge className="bg-red-600 text-white">{stats.missingProposed} missing in Proposed</Badge>
+                <Badge className="bg-red-500 text-white">{stats.missingFda} missing in FDA</Badge>
+                <Badge className="bg-red-400 text-white">{stats.missingDm} missing in DailyMed</Badge>
                 <div className="ml-auto">
                   <Button size="sm" variant="ghost" onClick={acceptAllMatches}>
                     <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Accept all matches
@@ -712,30 +771,31 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
 
               <div className="rounded-md border overflow-hidden">
                 <div className="grid grid-cols-12 bg-muted px-3 py-2 text-xs font-semibold gap-2">
-                  <div className="col-span-3">Field (dynamic)</div>
-                  <div className="col-span-4 flex items-center gap-2"><FileText className="h-3.5 w-3.5" /> Proposed</div>
-                  <div className="col-span-4 flex items-center gap-2"><ShieldCheck className="h-3.5 w-3.5" /> RLD</div>
+                  <div className="col-span-2">Field (dynamic)</div>
+                  <div className="col-span-3 flex items-center gap-2"><FileText className="h-3.5 w-3.5" /> Proposed</div>
+                  <div className="col-span-3 flex items-center gap-2"><ShieldCheck className="h-3.5 w-3.5" /> FDA RLD (openFDA)</div>
+                  <div className="col-span-3 flex items-center gap-2"><Globe className="h-3.5 w-3.5" /> DailyMed</div>
                   <div className="col-span-1 text-center">Status</div>
                 </div>
                 <div className="divide-y max-h-[560px] overflow-y-auto">
                   {fields.map(f => {
-                    const status = computeStatus(f.proposed, f.rld);
+                    const status = computeTriStatus(f.proposed, f.rld, f.dailymed);
                     const meta = STATUS_BADGE[status];
                     const showDiff = (status === 'mismatch' || status === 'partial') && f.proposed?.value && f.rld?.value;
                     const diff = showDiff ? diffWords(f.proposed!.value, f.rld!.value) : null;
                     const isOpen = inspectKey === f.key;
-                    const explanation = isOpen ? explainMatch(f.proposed, f.rld, status) : null;
+                    const explanation = isOpen ? explainMatch(f.proposed, f.rld, computeStatus(f.proposed, f.rld)) : null;
                     const altForRld = isOpen && f.proposed?.value ? findBestAlternate(f, fields, 'rld') : null;
                     const altForProposed = isOpen && f.rld?.value ? findBestAlternate(f, fields, 'proposed') : null;
                     return (
                       <React.Fragment key={f.key}>
                       <div className={`grid grid-cols-12 px-3 py-2 gap-2 text-xs items-start hover:bg-muted/40 ${f.accepted ? 'bg-green-50/50 dark:bg-green-950/10' : ''}`}>
-                        <div className="col-span-3 pt-1">
+                        <div className="col-span-2 pt-1">
                           <div className="font-medium">{f.label}</div>
-                          <div className="text-[10px] text-muted-foreground font-mono">{f.key}</div>
+                          <div className="text-[10px] text-muted-foreground font-mono break-all">{f.key}</div>
                           {f.accepted && <Badge variant="outline" className="text-[10px] mt-1">accepted</Badge>}
                         </div>
-                        <div className="col-span-4">
+                        <div className="col-span-3">
                           {f.proposed?.value ? (
                             <div className="space-y-1">
                               <div className="font-mono text-xs leading-snug">
@@ -751,20 +811,30 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
                             <span className="text-[11px] text-orange-600 dark:text-orange-400 italic">— not in proposed —</span>
                           )}
                         </div>
-                        <div className="col-span-4">
+                        <div className="col-span-3">
                           {f.rld?.value ? (
                             <div className="space-y-1">
                               <div className="font-mono text-xs leading-snug">
                                 {diff ? <DiffText parts={diff.right} side="right" /> : f.rld.value}
                               </div>
-                              {typeof f.rld.confidence === 'number' && (
-                                <Badge variant={f.rld.confidence >= 0.8 ? 'default' : f.rld.confidence >= 0.5 ? 'secondary' : 'destructive'} className="text-[10px]">
-                                  {Math.round(f.rld.confidence * 100)}%
-                                </Badge>
+                              {f.rld.evidence && (
+                                <div className="text-[10px] text-muted-foreground italic truncate" title={f.rld.evidence}>{f.rld.evidence}</div>
                               )}
                             </div>
                           ) : (
-                            <span className="text-[11px] text-blue-600 dark:text-blue-400 italic">— not in RLD —</span>
+                            <span className="text-[11px] text-red-600 dark:text-red-400 italic">— missing in FDA RLD —</span>
+                          )}
+                        </div>
+                        <div className="col-span-3">
+                          {f.dailymed?.value ? (
+                            <div className="space-y-1">
+                              <div className="font-mono text-xs leading-snug whitespace-pre-wrap break-words">{f.dailymed.value}</div>
+                              {f.dailymed.evidence && (
+                                <div className="text-[10px] text-muted-foreground italic truncate" title={f.dailymed.evidence}>{f.dailymed.evidence}</div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-[11px] text-red-600 dark:text-red-400 italic">— missing in DailyMed —</span>
                           )}
                         </div>
                         <div className="col-span-1 flex flex-col items-center gap-1 pt-1">
