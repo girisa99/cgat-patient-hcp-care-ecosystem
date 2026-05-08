@@ -2003,7 +2003,7 @@ async function callOpenAIVision(model: string, prompt: string, systemPrompt: str
 /**
  * Claude Vision API call
  */
-async function callClaudeVision(model: string, prompt: string, systemPrompt: string, imageBase64: string) {
+async function callClaudeVision(model: string, prompt: string, systemPrompt: string, imageBase64: string, maxTokens?: number) {
   const apiKey = Deno.env.get('ANTHROPIC_API_KEY') || Deno.env.get('CLAUDE_API_KEY');
   if (!apiKey) {
     throw new Error('Claude API key not configured for vision analysis.');
@@ -2022,7 +2022,7 @@ async function callClaudeVision(model: string, prompt: string, systemPrompt: str
     },
     body: JSON.stringify({
       model: normalizedModel,
-      max_tokens: 4000,
+      max_tokens: maxTokens ?? 4000,
       system: systemPrompt,
       messages: [
         {
