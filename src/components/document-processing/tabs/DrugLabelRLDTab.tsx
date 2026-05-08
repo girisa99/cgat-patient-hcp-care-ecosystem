@@ -319,6 +319,51 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
     }
   };
 
+  // Pull identifiers from the proposed side to query openFDA / DailyMed
+  const proposedIdentifiers = useMemo(() => {
+    const out: { brand_name?: string; generic_name?: string; ndc?: string; application_number?: string } = {};
+    for (const f of extraction?.fields || []) {
+      const v = f.proposed?.value?.trim();
+      if (!v) continue;
+      if (f.key === 'brand_name' && !out.brand_name) out.brand_name = v;
+      if (f.key === 'generic_name' && !out.generic_name) out.generic_name = v;
+      if (f.key === 'ndc' && !out.ndc) out.ndc = v;
+      if (f.key === 'application_number' && !out.application_number) out.application_number = v;
+    }
+    return out;
+  }, [extraction]);
+
+  const fetchRldFromFda = async () => {
+    if (!proposedIdentifiers.brand_name && !proposedIdentifiers.generic_name && !proposedIdentifiers.ndc && !proposedIdentifiers.application_number) {
+      toast.error('Need at least brand name, generic name, NDC, or NDA/ANDA number from the proposed label first.');
+      return;
+    }
+    setIsFetchingFda(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-rld-label', {
+        body: proposedIdentifiers,
+      });
+      if (error) throw new Error(error.message || 'FDA lookup failed');
+      if (!data?.fields?.length) throw new Error(data?.error || 'No RLD label found');
+
+      const additionFields: DualField[] = data.fields.map((f: any) => ({
+        key: f.key,
+        label: f.label || f.key,
+        proposed: null,
+        rld: { value: f.value, confidence: 0.95, evidence: f.evidence || data.source },
+      }));
+      const addition: DualExtraction = { documentContains: 'rld_only', fields: additionFields };
+      setExtraction(prev => prev ? mergeRldUpload(prev, addition) : addition);
+      setFdaSource(`${data.source} · ${data.identifier}`);
+      toast.success(`RLD pulled from ${data.source} — ${data.fields.length} fields merged`);
+    } catch (e: any) {
+      console.error('[DrugLabelRLD] FDA fetch failed:', e);
+      toast.error(e?.message || 'FDA / DailyMed lookup failed');
+    } finally {
+      setIsFetchingFda(false);
+    }
+  };
+
   const fields = extraction?.fields || [];
   const stats = useMemo(() => {
     const counts = { total: fields.length, match: 0, partial: 0, mismatch: 0, missing: 0 };
