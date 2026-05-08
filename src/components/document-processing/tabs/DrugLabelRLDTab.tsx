@@ -125,7 +125,103 @@ const DiffText: React.FC<{ parts: DiffPart[]; side: 'left' | 'right' }> = ({ par
   </span>
 );
 
-// ---------- Dual extraction call ----------
+// ---------- Field-match inspector helpers ----------
+const STOPWORDS = new Set(['the','a','an','and','or','of','to','in','for','on','with','is','are','be','by','as','at','this','that','it','its']);
+const tokenSet = (s: string): Set<string> => {
+  const out = new Set<string>();
+  (s || '').toLowerCase().replace(/[^a-z0-9\s%./-]/g, ' ').split(/\s+/).forEach(t => {
+    if (t && t.length > 1 && !STOPWORDS.has(t)) out.add(t);
+  });
+  return out;
+};
+const jaccard = (a: string, b: string): number => {
+  const A = tokenSet(a), B = tokenSet(b);
+  if (!A.size && !B.size) return 1;
+  if (!A.size || !B.size) return 0;
+  let inter = 0;
+  A.forEach(t => { if (B.has(t)) inter++; });
+  return inter / (A.size + B.size - inter);
+};
+const sharedTokens = (a: string, b: string): string[] => {
+  const A = tokenSet(a), B = tokenSet(b);
+  const out: string[] = [];
+  A.forEach(t => { if (B.has(t)) out.push(t); });
+  return out.slice(0, 20);
+};
+const uniqueTokens = (a: string, b: string): string[] => {
+  const A = tokenSet(a), B = tokenSet(b);
+  const out: string[] = [];
+  A.forEach(t => { if (!B.has(t)) out.push(t); });
+  return out.slice(0, 20);
+};
+
+interface MatchExplanation {
+  status: RowStatus;
+  similarity: number;
+  reasons: string[];
+  shared: string[];
+  onlyProposed: string[];
+  onlyRld: string[];
+  lengthDelta: number;
+}
+
+const explainMatch = (p: Side, r: Side, status: RowStatus): MatchExplanation => {
+  const pv = p?.value || '';
+  const rv = r?.value || '';
+  const sim = jaccard(pv, rv);
+  const reasons: string[] = [];
+  if (status === 'match') reasons.push('Normalized text is identical (case + whitespace ignored).');
+  if (status === 'partial') reasons.push('One value is a substring of the other — likely truncation or expansion.');
+  if (status === 'mismatch') {
+    reasons.push(`Token similarity ${(sim * 100).toFixed(0)}% — values diverge in wording.`);
+    if (Math.abs(pv.length - rv.length) > Math.max(pv.length, rv.length) * 0.4)
+      reasons.push('Significant length difference — one side likely contains additional content.');
+  }
+  if (status === 'missing_proposed') reasons.push('Proposed label has no value for this field.');
+  if (status === 'missing_rld') reasons.push('RLD has no value for this field.');
+  if (status === 'missing_both') reasons.push('Neither side reported a value.');
+  if (p?.confidence !== undefined && p.confidence < 0.6) reasons.push(`Low extraction confidence on Proposed (${Math.round(p.confidence * 100)}%).`);
+  if (r?.confidence !== undefined && r.confidence < 0.6) reasons.push(`Low extraction confidence on RLD (${Math.round(r.confidence * 100)}%).`);
+  return {
+    status,
+    similarity: sim,
+    reasons,
+    shared: sharedTokens(pv, rv),
+    onlyProposed: uniqueTokens(pv, rv),
+    onlyRld: uniqueTokens(rv, pv),
+    lengthDelta: pv.length - rv.length,
+  };
+};
+
+interface AlternateMatch {
+  key: string;
+  label: string;
+  side: 'proposed' | 'rld';
+  value: string;
+  similarity: number;
+}
+
+const findBestAlternate = (
+  field: DualField,
+  all: DualField[],
+  searchSide: 'proposed' | 'rld'
+): AlternateMatch | null => {
+  // We have value on the opposite side and want to find best alt match on `searchSide`.
+  const queryValue = searchSide === 'rld' ? field.proposed?.value : field.rld?.value;
+  if (!queryValue) return null;
+  let best: AlternateMatch | null = null;
+  for (const other of all) {
+    if (other.key === field.key) continue;
+    const candidate = searchSide === 'rld' ? other.rld?.value : other.proposed?.value;
+    if (!candidate) continue;
+    const sim = jaccard(queryValue, candidate);
+    if (sim > 0.25 && (!best || sim > best.similarity)) {
+      best = { key: other.key, label: other.label, side: searchSide, value: candidate, similarity: sim };
+    }
+  }
+  return best;
+};
+
 const seedHints = (): { key: string; label: string }[] => {
   const cfg = getDocumentTypeById('drug-label');
   return cfg?.targetFields.map(f => ({ key: f.key, label: f.label })) || [];
