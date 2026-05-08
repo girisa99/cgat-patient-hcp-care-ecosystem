@@ -1948,7 +1948,7 @@ Analyze the provided image and return a JSON object with:
 /**
  * OpenAI Vision API call
  */
-async function callOpenAIVision(model: string, prompt: string, systemPrompt: string, imageBase64: string) {
+async function callOpenAIVision(model: string, prompt: string, systemPrompt: string, imageBase64: string, maxTokens?: number) {
   const apiKey = Deno.env.get('OPENAI_API_KEY');
   if (!apiKey) {
     throw new Error('OpenAI API key not configured for vision analysis.');
@@ -1983,7 +1983,7 @@ async function callOpenAIVision(model: string, prompt: string, systemPrompt: str
           ]
         }
       ],
-      max_tokens: 4000
+      max_tokens: maxTokens ?? 4000
     }),
   });
 
@@ -2059,7 +2059,7 @@ async function callClaudeVision(model: string, prompt: string, systemPrompt: str
 /**
  * Gemini Vision API call (via direct API)
  */
-async function callGeminiVision(model: string, prompt: string, systemPrompt: string, imageBase64: string) {
+async function callGeminiVision(model: string, prompt: string, systemPrompt: string, imageBase64: string, maxTokens?: number) {
   const apiKey = Deno.env.get('GOOGLE_API_KEY') || Deno.env.get('GEMINI_API_KEY');
   if (!apiKey) {
     throw new Error('Gemini API key not configured for vision analysis.');
@@ -2088,7 +2088,7 @@ async function callGeminiVision(model: string, prompt: string, systemPrompt: str
       }],
       generationConfig: {
         temperature: 0.7,
-        maxOutputTokens: 4000
+        maxOutputTokens: maxTokens ?? 4000
       }
     }),
   });
