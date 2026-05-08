@@ -149,23 +149,22 @@ async function fetchDailyMed(input: any) {
     return null;
   }
   const xml = await r.text();
-  const doc = new DOMParser().parseFromString(xml, "application/xml");
 
   const fields: { key: string; label: string; value: string; evidence?: string }[] = [];
-  const title = firstDirectChildText(doc.documentElement, "title");
-  const effectiveTime = doc.getElementsByTagName("effectiveTime")?.[0]?.getAttribute("value") || "";
+  const title = firstTagText(xml, "title");
+  const effectiveTime = firstTagAttr(xml, "effectiveTime", "value");
 
   // Dynamic: surface every section DailyMed returns. Derive a snake_case key from
   // the section title or LOINC code — no hardcoded section mapping.
-  const sections = Array.from(doc.getElementsByTagName("section"));
+  const sections = Array.from(xml.matchAll(/<section\b[^>]*>([\s\S]*?)<\/section>/gi));
   const seen = new Set<string>();
-  for (const sec of sections) {
-    const title = firstDirectChildText(sec, "title");
-    const textNode = Array.from(sec.children).find((child) => child.tagName.toLowerCase() === "text");
-    const text = cleanText(textNode?.textContent || "");
+  for (const secMatch of sections) {
+    const sec = secMatch[1];
+    const title = firstTagText(sec, "title");
+    const textMatch = sec.match(/<text\b[^>]*>([\s\S]*?)<\/text>/i);
+    const text = textMatch ? stripXmlTags(textMatch[1]) : "";
     if (!text) continue;
-    const codeNode = Array.from(sec.children).find((child) => child.tagName.toLowerCase() === "code");
-    const code = codeNode?.getAttribute("code") || "";
+    const code = firstTagAttr(sec, "code", "code");
     const key = title ? slug(title) : code ? `loinc_${slug(String(code))}` : `section_${fields.length + 1}`;
     if (!key || seen.has(key)) continue;
     seen.add(key);
