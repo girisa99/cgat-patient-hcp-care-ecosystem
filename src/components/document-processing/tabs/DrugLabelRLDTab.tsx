@@ -438,6 +438,7 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
               {processingResult ? (
                 <span className="block mt-1 text-green-700 dark:text-green-400">
                   ✓ Source: <strong>{processingResult.fileName || 'last document'}</strong>
+                  {fdaSource && <> · RLD from <strong>{fdaSource}</strong></>}
                 </span>
               ) : (
                 <span className="block mt-1 text-orange-700 dark:text-orange-400">
