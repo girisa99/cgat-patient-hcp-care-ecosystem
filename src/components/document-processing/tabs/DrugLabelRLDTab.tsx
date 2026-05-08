@@ -80,17 +80,22 @@ const urlToBase64 = async (url: string): Promise<string | undefined> => {
   }
 };
 
-// Robust JSON extraction: strips ``` fences and finds the outermost balanced {...}
+// Robust JSON extraction: strips ``` fences, finds the outermost {...},
+// and repairs truncation by closing open strings/arrays/objects, then
+// trimming any trailing partial element.
 const extractJsonObject = (raw: string): any => {
   let s = (raw || '').trim();
   s = s.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
-  // First try direct parse
   try { return JSON.parse(s); } catch {}
-  // Find balanced braces
+
   const start = s.indexOf('{');
   if (start < 0) throw new Error('No JSON object found in model response');
-  let depth = 0, inStr = false, esc = false;
-  for (let i = start; i < s.length; i++) {
+  s = s.slice(start);
+
+  // Walk and track structural state
+  const stack: string[] = []; // '{' or '['
+  let inStr = false, esc = false, lastSafeEnd = -1;
+  for (let i = 0; i < s.length; i++) {
     const ch = s[i];
     if (inStr) {
       if (esc) { esc = false; continue; }
@@ -99,13 +104,37 @@ const extractJsonObject = (raw: string): any => {
       continue;
     }
     if (ch === '"') { inStr = true; continue; }
-    if (ch === '{') depth++;
-    else if (ch === '}') {
-      depth--;
-      if (depth === 0) return JSON.parse(s.slice(start, i + 1));
+    if (ch === '{' || ch === '[') stack.push(ch);
+    else if (ch === '}' || ch === ']') {
+      stack.pop();
+      if (stack.length === 0) { lastSafeEnd = i; break; }
     }
   }
-  throw new Error('Unbalanced JSON in model response');
+
+  // Fully balanced
+  if (lastSafeEnd >= 0) {
+    try { return JSON.parse(s.slice(0, lastSafeEnd + 1)); } catch {}
+  }
+
+  // --- Repair truncated JSON ---
+  let repaired = s;
+  // 1. Close any open string
+  if (inStr) repaired += '"';
+  // 2. Drop trailing comma / colon / partial token (keys, dangling commas)
+  repaired = repaired.replace(/[,:\s]*"[^"]*$/g, '');
+  repaired = repaired.replace(/[,:\s]+$/g, '');
+  // 3. Close brackets/braces in reverse order
+  while (stack.length) {
+    const top = stack.pop();
+    repaired += top === '{' ? '}' : ']';
+  }
+  try {
+    const parsed = JSON.parse(repaired);
+    console.warn('[DrugLabelRLD] JSON was truncated; recovered partial result.');
+    return parsed;
+  } catch (e: any) {
+    throw new Error('Unbalanced JSON in model response (repair failed: ' + e.message + ')');
+  }
 };
 
 const norm = (s: string) => (s || '').toLowerCase().replace(/\s+/g, ' ').trim();
@@ -304,11 +333,13 @@ Return STRICT JSON only — no prose, no markdown — of shape:
     {
       "key": "snake_case_key",
       "label": "Human readable section label",
-      "proposed": { "value": "verbatim text", "confidence": 0.0-1.0, "evidence": "short quote/locator" } | null,
-      "rld":      { "value": "verbatim text", "confidence": 0.0-1.0, "evidence": "short quote/locator" } | null
+      "proposed": { "value": "verbatim text", "confidence": 0.0-1.0, "evidence": "≤80 char locator" } | null,
+      "rld":      { "value": "verbatim text", "confidence": 0.0-1.0, "evidence": "≤80 char locator" } | null
     }
   ]
 }
+
+Hard limits to keep the response compact: keep "evidence" under 80 characters; do not repeat the value in the evidence; output no commentary, no markdown fences.
 
 ${opts.rawText ? `=== OCR TEXT (may be empty) ===\n${opts.rawText.slice(0, 24000)}` : ''}`;
 
@@ -318,7 +349,7 @@ ${opts.rawText ? `=== OCR TEXT (may be empty) ===\n${opts.rawText.slice(0, 24000
     systemPrompt,
     prompt: userPrompt,
     temperature: 0,
-    maxTokens: 8000,
+    maxTokens: 16000,
   };
   if (opts.imageBase64) body.context = { image: opts.imageBase64 };
 
