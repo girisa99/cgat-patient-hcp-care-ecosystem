@@ -332,6 +332,70 @@ const seedHints = (): { key: string; label: string }[] => {
   return cfg?.targetFields.map(f => ({ key: f.key, label: f.label })) || [];
 };
 
+const humanizeFieldKey = (key: string) =>
+  key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+const normalizeExtractedSide = (field: any): Side => {
+  const rawValue = field && typeof field === 'object' && 'value' in field ? field.value : field;
+  if (rawValue === null || rawValue === undefined) return null;
+  const value = typeof rawValue === 'object' ? JSON.stringify(rawValue) : String(rawValue);
+  if (!value.trim()) return null;
+  return {
+    value: value.trim(),
+    confidence: field && typeof field === 'object' && typeof field.confidence === 'number' ? field.confidence : 0.9,
+    evidence: field && typeof field === 'object' && field.verified ? 'Uploaded extraction result' : undefined,
+  };
+};
+
+const buildUploadedProposedExtraction = (processingResult: ProcessingResult | null): DualExtraction | null => {
+  const entries = Object.entries(processingResult?.extractedFields || {});
+  if (!entries.length) return null;
+  const seedLabel = new Map(seedHints().map(s => [s.key, s.label]));
+  const fields = entries.flatMap(([key, field]) => {
+    const proposed = normalizeExtractedSide(field);
+    return proposed ? [{ key, label: seedLabel.get(key) || humanizeFieldKey(key), proposed, rld: null, dailymed: null }] : [];
+  });
+  return fields.length ? { documentContains: 'proposed_only', fields } : null;
+};
+
+const fieldIdentityScore = (a: Pick<DualField, 'key' | 'label'>, b: Pick<DualField, 'key' | 'label'>) => {
+  if (a.key === b.key) return 1;
+  return jaccard(`${a.key.replace(/_/g, ' ')} ${a.label}`, `${b.key.replace(/_/g, ' ')} ${b.label}`);
+};
+
+const findCompatibleField = (
+  map: Map<string, DualField>,
+  incoming: Pick<DualField, 'key' | 'label'> & { value?: string },
+  sideToFill?: 'proposed' | 'rld' | 'dailymed',
+): DualField | null => {
+  const exact = map.get(incoming.key);
+  if (exact) return exact;
+  let best: { row: DualField; score: number } | null = null;
+  for (const row of map.values()) {
+    if (sideToFill && row[sideToFill]?.value) continue;
+    const identity = fieldIdentityScore(row, incoming);
+    const proposedSimilarity = incoming.value && row.proposed?.value ? jaccard(row.proposed.value, incoming.value) : 0;
+    const score = Math.max(identity, proposedSimilarity >= 0.78 ? proposedSimilarity : 0);
+    if (score > (best?.score || 0)) best = { row, score };
+  }
+  return best && best.score >= 0.62 ? best.row : null;
+};
+
+function mergeUploadedProposedFields(base: DualExtraction, uploaded: DualExtraction | null): DualExtraction {
+  if (!uploaded?.fields.length) return base;
+  const map = new Map<string, DualField>(base.fields.map(f => [f.key, { ...f }]));
+  for (const f of uploaded.fields) {
+    const row = findCompatibleField(map, { key: f.key, label: f.label, value: f.proposed?.value }, 'proposed');
+    if (row) {
+      if (!row.proposed?.value || (f.proposed?.confidence || 0) > (row.proposed?.confidence || 0)) row.proposed = f.proposed;
+      row.label = row.label || f.label;
+    } else {
+      map.set(f.key, { ...f });
+    }
+  }
+  return { ...base, documentContains: base.documentContains === 'rld_only' ? 'both' : base.documentContains, fields: Array.from(map.values()) };
+}
+
 async function dualExtract(opts: {
   imageBase64?: string;
   rawText?: string;
