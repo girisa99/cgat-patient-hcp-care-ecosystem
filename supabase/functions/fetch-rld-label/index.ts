@@ -75,13 +75,16 @@ async function fetchOpenFda(input: any) {
     if (value) fields.push({ key, label: key.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()), value });
   }
 
-  // SPL sections — openFDA returns them as arrays of strings
-  for (const { key, label } of FDA_SECTION_KEYS) {
-    const arr = hit[key];
-    if (Array.isArray(arr) && arr.length > 0) {
-      const text = arr.join("\n\n").trim();
-      if (text) fields.push({ key, label, value: text, evidence: "openFDA Drug Label API" });
-    }
+  // SPL sections — dynamically surface EVERY string-array field openFDA returns.
+  // openFDA exposes each SPL section as a top-level key whose value is a string array.
+  // We don't hardcode a list — whatever sections this specific label has, we pass through.
+  for (const [key, val] of Object.entries(hit)) {
+    if (OPENFDA_SKIP_KEYS.has(key)) continue;
+    if (key.endsWith("_table")) continue; // structured HTML tables, skip for text comparison
+    if (!Array.isArray(val)) continue;
+    const text = (val as unknown[]).filter((x) => typeof x === "string").join("\n\n").trim();
+    if (!text) continue;
+    fields.push({ key, label: humanizeKey(key), value: text, evidence: "openFDA Drug Label API" });
   }
 
   return {
