@@ -396,10 +396,22 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
     } catch {}
   }, [extraction]);
 
-  const sourceImageBase64 = useMemo(() => {
+  const [sourceImageBase64, setSourceImageBase64] = useState<string | undefined>(undefined);
+
+  // Resolve image to base64 whether it's a data URL or a remote (Supabase) URL.
+  useEffect(() => {
+    let cancelled = false;
     const url = processingResult?.imageUrl || '';
-    if (url.startsWith('data:image')) return stripDataUrl(url);
-    return undefined;
+    if (!url) { setSourceImageBase64(undefined); return; }
+    if (url.startsWith('data:image')) {
+      setSourceImageBase64(stripDataUrl(url));
+      return;
+    }
+    (async () => {
+      const b64 = await urlToBase64(url);
+      if (!cancelled) setSourceImageBase64(b64);
+    })();
+    return () => { cancelled = true; };
   }, [processingResult?.imageUrl]);
 
   const sourceRawText = (processingResult?.rawText || '').trim();
