@@ -405,10 +405,20 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
                 {isExtracting ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5 mr-1" />}
                 Re-extract
               </Button>
+              <Button
+                size="sm"
+                variant="default"
+                onClick={fetchRldFromFda}
+                disabled={isFetchingFda || (!proposedIdentifiers.brand_name && !proposedIdentifiers.generic_name && !proposedIdentifiers.ndc && !proposedIdentifiers.application_number)}
+                title="Fetch the FDA-approved RLD label from openFDA / DailyMed using the proposed label's identifiers"
+              >
+                {isFetchingFda ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Globe className="h-3.5 w-3.5 mr-1" />}
+                Fetch RLD from FDA / DailyMed
+              </Button>
               <Button size="sm" variant="outline" asChild disabled={isUploadingRld}>
                 <label className="cursor-pointer">
                   {isUploadingRld ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Upload className="h-3.5 w-3.5 mr-1" />}
-                  Upload RLD separately
+                  Upload RLD manually
                   <input type="file" accept="image/*,.txt,.pdf" className="hidden"
                     onChange={e => e.target.files?.[0] && handleRldUpload(e.target.files[0])} />
                 </label>
