@@ -592,19 +592,30 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
       const { data, error } = await supabase.functions.invoke('fetch-rld-label', {
         body: proposedIdentifiers,
       });
-      if (error) throw new Error(error.message || 'FDA lookup failed');
-      if (!data?.fields?.length) throw new Error(data?.error || 'No RLD label found');
+      if (error) throw new Error(error.message || 'FDA / DailyMed lookup failed');
+      const openFda = data?.openFda;
+      const dailyMed = data?.dailyMed;
+      if (!openFda && !dailyMed) {
+        throw new Error(data?.error || 'No RLD label found in openFDA or DailyMed');
+      }
 
-      const additionFields: DualField[] = data.fields.map((f: any) => ({
-        key: f.key,
-        label: f.label || f.key,
-        proposed: null,
-        rld: { value: f.value, confidence: 0.95, evidence: f.evidence || data.source },
-      }));
-      const addition: DualExtraction = { documentContains: 'rld_only', fields: additionFields };
-      setExtraction(prev => prev ? mergeRldUpload(prev, addition) : addition);
-      setFdaSource(`${data.source} · ${data.identifier}`);
-      toast.success(`RLD pulled from ${data.source} — ${data.fields.length} fields merged`);
+      setExtraction(prev => mergeExternalSources(
+        prev,
+        openFda?.fields || [],
+        dailyMed?.fields || [],
+      ));
+
+      const sourceLabel = [
+        openFda ? `openFDA (${openFda.identifier})` : null,
+        dailyMed ? `DailyMed (${dailyMed.identifier})` : null,
+      ].filter(Boolean).join(' + ');
+      setFdaSource(sourceLabel);
+
+      const fdaCount = openFda?.fields?.length || 0;
+      const dmCount = dailyMed?.fields?.length || 0;
+      toast.success(`Fetched ${fdaCount} FDA fields and ${dmCount} DailyMed fields`);
+      if (data?.openFdaError) toast.warning(`openFDA: ${data.openFdaError}`);
+      if (data?.dailyMedError) toast.warning(`DailyMed: ${data.dailyMedError}`);
     } catch (e: any) {
       console.error('[DrugLabelRLD] FDA fetch failed:', e);
       toast.error(e?.message || 'FDA / DailyMed lookup failed');
@@ -615,13 +626,15 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
 
   const fields = extraction?.fields || [];
   const stats = useMemo(() => {
-    const counts = { total: fields.length, match: 0, partial: 0, mismatch: 0, missing: 0 };
+    const counts = { total: fields.length, match: 0, partial: 0, mismatch: 0, missingFda: 0, missingDm: 0, missingProposed: 0 };
     fields.forEach(f => {
-      const s = computeStatus(f.proposed, f.rld);
+      const s = computeTriStatus(f.proposed, f.rld, f.dailymed);
       if (s === 'match') counts.match++;
       else if (s === 'partial') counts.partial++;
       else if (s === 'mismatch') counts.mismatch++;
-      else counts.missing++;
+      if (!f.rld?.value) counts.missingFda++;
+      if (!f.dailymed?.value) counts.missingDm++;
+      if (!f.proposed?.value) counts.missingProposed++;
     });
     return counts;
   }, [fields]);
