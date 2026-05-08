@@ -448,3 +448,6 @@ verify_jwt = false
 
 [functions.guide-tts]
 verify_jwt = false
+
+[functions.fetch-rld-label]
+verify_jwt = false
