@@ -80,20 +80,43 @@ const urlToBase64 = async (url: string): Promise<string | undefined> => {
   }
 };
 
-// Robust JSON extraction: strips ``` fences, finds the outermost {...},
-// and repairs truncation by closing open strings/arrays/objects, then
-// trimming any trailing partial element.
+const escapeControlCharsInStrings = (input: string): string => {
+  let out = '', inStr = false, esc = false;
+  for (let i = 0; i < input.length; i++) {
+    const ch = input[i];
+    if (inStr) {
+      if (esc) { out += ch; esc = false; continue; }
+      if (ch === '\\') { out += ch; esc = true; continue; }
+      if (ch === '"') { out += ch; inStr = false; continue; }
+      if (ch === '\n') { out += '\\n'; continue; }
+      if (ch === '\r') { out += '\\n'; continue; }
+      if (ch === '\t') { out += '\\t'; continue; }
+      if (ch.charCodeAt(0) < 32) { out += `\\u${ch.charCodeAt(0).toString(16).padStart(4, '0')}`; continue; }
+      out += ch;
+      continue;
+    }
+    out += ch;
+    if (ch === '"') inStr = true;
+  }
+  return out;
+};
+
+const parseJsonCandidate = (candidate: string): any => {
+  const compact = candidate.replace(/,\s*([}\]])/g, '$1').trim();
+  try { return JSON.parse(compact); } catch {}
+  return JSON.parse(escapeControlCharsInStrings(compact));
+};
+
+// Robust JSON extraction: handles fences, raw newlines inside strings, and truncated JSON.
 const extractJsonObject = (raw: string): any => {
-  let s = (raw || '').trim();
-  s = s.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
-  try { return JSON.parse(s); } catch {}
+  let s = (raw || '').trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
+  try { return parseJsonCandidate(s); } catch {}
 
   const start = s.indexOf('{');
   if (start < 0) throw new Error('No JSON object found in model response');
   s = s.slice(start);
 
-  // Walk and track structural state
-  const stack: string[] = []; // '{' or '['
+  const stack: string[] = [];
   let inStr = false, esc = false, lastSafeEnd = -1;
   for (let i = 0; i < s.length; i++) {
     const ch = s[i];
@@ -111,26 +134,17 @@ const extractJsonObject = (raw: string): any => {
     }
   }
 
-  // Fully balanced
   if (lastSafeEnd >= 0) {
-    try { return JSON.parse(s.slice(0, lastSafeEnd + 1)); } catch {}
+    try { return parseJsonCandidate(s.slice(0, lastSafeEnd + 1)); } catch {}
   }
 
-  // --- Repair truncated JSON ---
   let repaired = s;
-  // 1. Close any open string
   if (inStr) repaired += '"';
-  // 2. Drop trailing comma / colon / partial token (keys, dangling commas)
-  repaired = repaired.replace(/[,:\s]*"[^"]*$/g, '');
-  repaired = repaired.replace(/[,:\s]+$/g, '');
-  // 3. Close brackets/braces in reverse order
-  while (stack.length) {
-    const top = stack.pop();
-    repaired += top === '{' ? '}' : ']';
-  }
+  repaired = repaired.replace(/[,\s]*"[^"]*$/g, '').replace(/[:,\s]+$/g, '');
+  while (stack.length) repaired += stack.pop() === '{' ? '}' : ']';
   try {
-    const parsed = JSON.parse(repaired);
-    console.warn('[DrugLabelRLD] JSON was truncated; recovered partial result.');
+    const parsed = parseJsonCandidate(repaired);
+    console.warn('[DrugLabelRLD] JSON was truncated or had raw control characters; recovered partial result.');
     return parsed;
   } catch (e: any) {
     throw new Error('Unbalanced JSON in model response (repair failed: ' + e.message + ')');

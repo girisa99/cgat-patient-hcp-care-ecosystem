@@ -1359,7 +1359,7 @@ Return ONLY valid JSON:
     // Handle scene analysis action with vision capabilities
     if (action === 'analyze_scene' && context?.image) {
       console.log(`[UniversalAI] Scene analysis request - Provider: ${provider}`);
-      response = await callVisionAnalysis(provider, model, prompt, systemPrompt, context.image, context);
+      response = await callVisionAnalysis(provider, model, prompt, systemPrompt, context.image, context, maxTokens);
     }
     // Route image generation based on provider preference - Direct API calls
     else if (imageGeneration) {
@@ -1911,7 +1911,8 @@ async function callVisionAnalysis(
   prompt: string,
   systemPrompt: string | undefined,
   imageBase64: string,
-  context: Record<string, any>
+  context: Record<string, any>,
+  maxTokens?: number
 ) {
   console.log(`[UniversalAI-Vision] Analyzing scene with provider: ${provider}`);
   
@@ -1931,23 +1932,23 @@ Analyze the provided image and return a JSON object with:
 
   switch (provider) {
     case 'openai':
-      return await callOpenAIVision(model || 'gpt-4o', analysisPrompt, fullSystemPrompt, imageBase64);
+      return await callOpenAIVision(model || 'gpt-4o', analysisPrompt, fullSystemPrompt, imageBase64, maxTokens);
     case 'claude':
-      return await callClaudeVision(model || 'claude-sonnet-4-6', analysisPrompt, fullSystemPrompt, imageBase64);
+      return await callClaudeVision(model || 'claude-sonnet-4-6', analysisPrompt, fullSystemPrompt, imageBase64, maxTokens);
     case 'gemini':
-      return await callGeminiVision(model || 'gemini-2.5-flash', analysisPrompt, fullSystemPrompt, imageBase64);
+      return await callGeminiVision(model || 'gemini-2.5-flash', analysisPrompt, fullSystemPrompt, imageBase64, maxTokens);
     case 'lovable': // DEPRECATED - route to Gemini direct API
     case 'default':
     default:
       // Default to Gemini Vision (NO LOVABLE AI)
-      return await callGeminiVision(model || 'gemini-2.5-flash', analysisPrompt, fullSystemPrompt, imageBase64);
+      return await callGeminiVision(model || 'gemini-2.5-flash', analysisPrompt, fullSystemPrompt, imageBase64, maxTokens);
   }
 }
 
 /**
  * OpenAI Vision API call
  */
-async function callOpenAIVision(model: string, prompt: string, systemPrompt: string, imageBase64: string) {
+async function callOpenAIVision(model: string, prompt: string, systemPrompt: string, imageBase64: string, maxTokens?: number) {
   const apiKey = Deno.env.get('OPENAI_API_KEY');
   if (!apiKey) {
     throw new Error('OpenAI API key not configured for vision analysis.');
@@ -1982,7 +1983,7 @@ async function callOpenAIVision(model: string, prompt: string, systemPrompt: str
           ]
         }
       ],
-      max_tokens: 4000
+      max_tokens: maxTokens ?? 4000
     }),
   });
 
@@ -2002,7 +2003,7 @@ async function callOpenAIVision(model: string, prompt: string, systemPrompt: str
 /**
  * Claude Vision API call
  */
-async function callClaudeVision(model: string, prompt: string, systemPrompt: string, imageBase64: string) {
+async function callClaudeVision(model: string, prompt: string, systemPrompt: string, imageBase64: string, maxTokens?: number) {
   const apiKey = Deno.env.get('ANTHROPIC_API_KEY') || Deno.env.get('CLAUDE_API_KEY');
   if (!apiKey) {
     throw new Error('Claude API key not configured for vision analysis.');
@@ -2021,7 +2022,7 @@ async function callClaudeVision(model: string, prompt: string, systemPrompt: str
     },
     body: JSON.stringify({
       model: normalizedModel,
-      max_tokens: 4000,
+      max_tokens: maxTokens ?? 4000,
       system: systemPrompt,
       messages: [
         {
@@ -2058,7 +2059,7 @@ async function callClaudeVision(model: string, prompt: string, systemPrompt: str
 /**
  * Gemini Vision API call (via direct API)
  */
-async function callGeminiVision(model: string, prompt: string, systemPrompt: string, imageBase64: string) {
+async function callGeminiVision(model: string, prompt: string, systemPrompt: string, imageBase64: string, maxTokens?: number) {
   const apiKey = Deno.env.get('GOOGLE_API_KEY') || Deno.env.get('GEMINI_API_KEY');
   if (!apiKey) {
     throw new Error('Gemini API key not configured for vision analysis.');
@@ -2087,7 +2088,7 @@ async function callGeminiVision(model: string, prompt: string, systemPrompt: str
       }],
       generationConfig: {
         temperature: 0.7,
-        maxOutputTokens: 4000
+        maxOutputTokens: maxTokens ?? 4000
       }
     }),
   });
