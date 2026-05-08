@@ -347,7 +347,7 @@ ${opts.rawText ? `=== OCR TEXT (may be empty) ===\n${opts.rawText.slice(0, 24000
     systemPrompt,
     prompt: userPrompt,
     temperature: 0,
-    maxTokens: 8000,
+    maxTokens: 16000,
   };
   if (opts.imageBase64) body.context = { image: opts.imageBase64 };
 
