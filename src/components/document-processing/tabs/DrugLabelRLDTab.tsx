@@ -332,6 +332,70 @@ const seedHints = (): { key: string; label: string }[] => {
   return cfg?.targetFields.map(f => ({ key: f.key, label: f.label })) || [];
 };
 
+const humanizeFieldKey = (key: string) =>
+  key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+const normalizeExtractedSide = (field: any): Side => {
+  const rawValue = field && typeof field === 'object' && 'value' in field ? field.value : field;
+  if (rawValue === null || rawValue === undefined) return null;
+  const value = typeof rawValue === 'object' ? JSON.stringify(rawValue) : String(rawValue);
+  if (!value.trim()) return null;
+  return {
+    value: value.trim(),
+    confidence: field && typeof field === 'object' && typeof field.confidence === 'number' ? field.confidence : 0.9,
+    evidence: field && typeof field === 'object' && field.verified ? 'Uploaded extraction result' : undefined,
+  };
+};
+
+const buildUploadedProposedExtraction = (processingResult: ProcessingResult | null): DualExtraction | null => {
+  const entries = Object.entries(processingResult?.extractedFields || {});
+  if (!entries.length) return null;
+  const seedLabel = new Map(seedHints().map(s => [s.key, s.label]));
+  const fields = entries.flatMap(([key, field]) => {
+    const proposed = normalizeExtractedSide(field);
+    return proposed ? [{ key, label: seedLabel.get(key) || humanizeFieldKey(key), proposed, rld: null, dailymed: null }] : [];
+  });
+  return fields.length ? { documentContains: 'proposed_only', fields } : null;
+};
+
+const fieldIdentityScore = (a: Pick<DualField, 'key' | 'label'>, b: Pick<DualField, 'key' | 'label'>) => {
+  if (a.key === b.key) return 1;
+  return jaccard(`${a.key.replace(/_/g, ' ')} ${a.label}`, `${b.key.replace(/_/g, ' ')} ${b.label}`);
+};
+
+const findCompatibleField = (
+  map: Map<string, DualField>,
+  incoming: Pick<DualField, 'key' | 'label'> & { value?: string },
+  sideToFill?: 'proposed' | 'rld' | 'dailymed',
+): DualField | null => {
+  const exact = map.get(incoming.key);
+  if (exact) return exact;
+  let best: { row: DualField; score: number } | null = null;
+  for (const row of map.values()) {
+    if (sideToFill && row[sideToFill]?.value) continue;
+    const identity = fieldIdentityScore(row, incoming);
+    const proposedSimilarity = incoming.value && row.proposed?.value ? jaccard(row.proposed.value, incoming.value) : 0;
+    const score = Math.max(identity, proposedSimilarity >= 0.78 ? proposedSimilarity : 0);
+    if (score > (best?.score || 0)) best = { row, score };
+  }
+  return best && best.score >= 0.62 ? best.row : null;
+};
+
+function mergeUploadedProposedFields(base: DualExtraction, uploaded: DualExtraction | null): DualExtraction {
+  if (!uploaded?.fields.length) return base;
+  const map = new Map<string, DualField>(base.fields.map(f => [f.key, { ...f }]));
+  for (const f of uploaded.fields) {
+    const row = findCompatibleField(map, { key: f.key, label: f.label, value: f.proposed?.value }, 'proposed');
+    if (row) {
+      if (!row.proposed?.value || (f.proposed?.confidence || 0) > (row.proposed?.confidence || 0)) row.proposed = f.proposed;
+      row.label = row.label || f.label;
+    } else {
+      map.set(f.key, { ...f });
+    }
+  }
+  return { ...base, documentContains: base.documentContains === 'rld_only' ? 'both' : base.documentContains, fields: Array.from(map.values()) };
+}
+
 async function dualExtract(opts: {
   imageBase64?: string;
   rawText?: string;
@@ -452,11 +516,11 @@ function mergeExternalSources(
     return row;
   };
   for (const f of openFdaFields) {
-    const row = ensure(f.key, f.label || f.key);
+    const row = findCompatibleField(map, { key: f.key, label: f.label || f.key, value: f.value }, 'rld') || ensure(f.key, f.label || f.key);
     row.rld = { value: f.value, confidence: 0.95, evidence: f.evidence || 'openFDA' };
   }
   for (const f of dailyMedFields) {
-    const row = ensure(f.key, f.label || f.key);
+    const row = findCompatibleField(map, { key: f.key, label: f.label || f.key, value: f.value }, 'dailymed') || ensure(f.key, f.label || f.key);
     row.dailymed = { value: f.value, confidence: 0.95, evidence: f.evidence || 'DailyMed' };
   }
   return { documentContains: base?.documentContains || 'rld_only', fields: Array.from(map.values()) };
@@ -486,6 +550,7 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
   }, [extraction]);
 
   const [sourceImageBase64, setSourceImageBase64] = useState<string | undefined>(undefined);
+  const uploadedProposedExtraction = useMemo(() => buildUploadedProposedExtraction(processingResult), [processingResult]);
 
   // Resolve image to base64 whether it's a data URL or a remote (Supabase) URL.
   useEffect(() => {
@@ -507,12 +572,18 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
 
   // Fingerprint to detect new document and re-run extraction automatically
   const sourceFingerprint = useMemo(() => {
-    return `${processingResult?.fileName || ''}|${sourceRawText.length}|${(sourceImageBase64 || '').length}`;
-  }, [processingResult?.fileName, sourceRawText, sourceImageBase64]);
+    const fieldSignature = JSON.stringify(Object.entries(processingResult?.extractedFields || {}).map(([k, v]: [string, any]) => [k, v?.value ?? v]));
+    return `${processingResult?.fileName || ''}|${sourceRawText.length}|${(sourceImageBase64 || '').length}|${fieldSignature.length}`;
+  }, [processingResult?.fileName, processingResult?.extractedFields, sourceRawText, sourceImageBase64]);
 
   const runExtraction = useCallback(async (silent = false) => {
-    if (!sourceImageBase64 && !sourceRawText) {
+    if (!sourceImageBase64 && !sourceRawText && !uploadedProposedExtraction?.fields.length) {
       if (!silent) toast.error('Process a drug label on the Upload tab first.');
+      return;
+    }
+    if (!sourceImageBase64 && !sourceRawText && uploadedProposedExtraction?.fields.length) {
+      setExtraction(uploadedProposedExtraction);
+      if (!silent) toast.success(`Loaded ${uploadedProposedExtraction.fields.length} mapped Proposed fields`);
       return;
     }
     setIsExtracting(true);
@@ -523,27 +594,34 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
         rawText: sourceRawText,
         mode: 'auto',
       });
-      setExtraction(result);
-      const total = result.fields.length;
-      const both = result.fields.filter(f => f.proposed && f.rld).length;
+      const mergedResult = mergeUploadedProposedFields(result, uploadedProposedExtraction);
+      setExtraction(mergedResult);
+      const total = mergedResult.fields.length;
+      const both = mergedResult.fields.filter(f => f.proposed && f.rld).length;
       toast.success(`Extracted ${total} fields — ${both} have both Proposed & RLD values`);
     } catch (e: any) {
       console.error('[DrugLabelRLD] extraction failed:', e);
-      setExtractError(e?.message || 'Extraction failed');
-      if (!silent) toast.error(e?.message || 'Extraction failed');
+      if (uploadedProposedExtraction?.fields.length) {
+        setExtraction(uploadedProposedExtraction);
+        setExtractError(null);
+        if (!silent) toast.warning('AI extraction failed, so the comparison is using uploaded mapped fields.');
+      } else {
+        setExtractError(e?.message || 'Extraction failed');
+        if (!silent) toast.error(e?.message || 'Extraction failed');
+      }
     } finally {
       setIsExtracting(false);
     }
-  }, [sourceImageBase64, sourceRawText]);
+  }, [sourceImageBase64, sourceRawText, uploadedProposedExtraction]);
 
   // Auto-run once per new source
   useEffect(() => {
     if (!processingResult) return;
-    if (!sourceImageBase64 && !sourceRawText) return;
+    if (!sourceImageBase64 && !sourceRawText && !uploadedProposedExtraction?.fields.length) return;
     if (lastSourceRef.current === sourceFingerprint) return;
     lastSourceRef.current = sourceFingerprint;
     runExtraction(true);
-  }, [processingResult, sourceFingerprint, sourceImageBase64, sourceRawText, runExtraction]);
+  }, [processingResult, sourceFingerprint, sourceImageBase64, sourceRawText, uploadedProposedExtraction, runExtraction]);
 
   const handleRldUpload = async (file: File) => {
     if (!file) return;
@@ -574,10 +652,11 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
     for (const f of extraction?.fields || []) {
       const v = f.proposed?.value?.trim();
       if (!v) continue;
-      if (f.key === 'brand_name' && !out.brand_name) out.brand_name = v;
-      if (f.key === 'generic_name' && !out.generic_name) out.generic_name = v;
-      if (f.key === 'ndc' && !out.ndc) out.ndc = v;
-      if (f.key === 'application_number' && !out.application_number) out.application_number = v;
+      const identity = `${f.key} ${f.label}`.toLowerCase();
+      if (!out.brand_name && identity.includes('brand') && identity.includes('name')) out.brand_name = v;
+      if (!out.generic_name && (identity.includes('generic') || identity.includes('established'))) out.generic_name = v;
+      if (!out.ndc && /\bndc\b|national drug code/.test(identity)) out.ndc = v;
+      if (!out.application_number && /application|\bnda\b|\banda\b/.test(identity)) out.application_number = v;
     }
     return out;
   }, [extraction]);

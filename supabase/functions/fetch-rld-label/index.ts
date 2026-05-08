@@ -44,6 +44,27 @@ function buildOpenFdaSearch(input: {
   return clauses.join("+OR+");
 }
 
+const cleanText = (value: string) => value.replace(/\s+/g, " ").trim();
+
+const slug = (s: string) =>
+  s.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 80);
+
+const decodeXmlEntities = (value: string) => value
+  .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&")
+  .replace(/&quot;/g, '"').replace(/&apos;/g, "'");
+
+const stripXmlTags = (value: string) => cleanText(decodeXmlEntities(value.replace(/<[^>]+>/g, " ")));
+
+const firstTagText = (xml: string, tagName: string): string => {
+  const match = xml.match(new RegExp(`<${tagName}\\b[^>]*>([\\s\\S]*?)</${tagName}>`, "i"));
+  return match ? stripXmlTags(match[1]) : "";
+};
+
+const firstTagAttr = (xml: string, tagName: string, attr: string): string => {
+  const match = xml.match(new RegExp(`<${tagName}\\b[^>]*\\s${attr}="([^"]+)"`, "i"));
+  return match?.[1] || "";
+};
+
 async function fetchOpenFda(input: any) {
   const search = buildOpenFdaSearch(input);
   if (!search) return null;
@@ -120,27 +141,33 @@ async function fetchDailyMed(input: any) {
   }
   if (!setid) return null;
 
-  // Fetch the SPL document — DailyMed returns sections by LOINC code
-  const splUrl = `https://dailymed.nlm.nih.gov/dailymed/services/v2/spls/${setid}.json`;
-  const r = await fetch(splUrl);
-  if (!r.ok) return null;
-  const j = await r.json();
-  const data = j?.data || {};
+  // Fetch the SPL XML document — DailyMed does not expose the full detail as .json.
+  const splUrl = `https://dailymed.nlm.nih.gov/dailymed/services/v2/spls/${setid}.xml`;
+  const r = await fetch(splUrl, { headers: { "User-Agent": "GenieSuite-RLD-Comparison/1.0" } });
+  if (!r.ok) {
+    console.warn("[fetch-rld-label] DailyMed SPL XML non-200:", r.status, splUrl);
+    return null;
+  }
+  const xml = await r.text();
 
   const fields: { key: string; label: string; value: string; evidence?: string }[] = [];
-  const sections = Array.isArray(data.sections) ? data.sections : [];
+  const title = firstTagText(xml, "title");
+  const effectiveTime = firstTagAttr(xml, "effectiveTime", "value");
 
-  // Dynamic: surface every section DailyMed returns. Derive a snake_case key
-  // from the section's title (or LOINC code as fallback) — no hardcoded mapping.
-  const slug = (s: string) =>
-    s.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 60);
-
-  for (const sec of sections) {
-    const code = sec?.code || sec?.loinc_code || sec?.section_code || "";
-    const title = (sec?.title || sec?.title_text || sec?.name || "").toString().trim();
-    const text = (sec?.text || sec?.section_text || "").toString().trim();
+  // Dynamic: surface every section DailyMed returns. Derive a snake_case key from
+  // the section title or LOINC code — no hardcoded section mapping.
+  const sections = Array.from(xml.matchAll(/<section\b[^>]*>([\s\S]*?)<\/section>/gi));
+  const seen = new Set<string>();
+  for (const secMatch of sections) {
+    const sec = secMatch[1];
+    const title = firstTagText(sec, "title");
+    const textMatch = sec.match(/<text\b[^>]*>([\s\S]*?)<\/text>/i);
+    const text = textMatch ? stripXmlTags(textMatch[1]) : "";
     if (!text) continue;
+    const code = firstTagAttr(sec, "code", "code");
     const key = title ? slug(title) : code ? `loinc_${slug(String(code))}` : `section_${fields.length + 1}`;
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
     const label = title || (code ? `LOINC ${code}` : `Section ${fields.length + 1}`);
     fields.push({
       key,
@@ -150,14 +177,14 @@ async function fetchDailyMed(input: any) {
     });
   }
 
-  if (data.title) fields.unshift({ key: "spl_title", label: "SPL Title", value: data.title });
-  if (data.published_date) fields.push({ key: "spl_published_date", label: "Published Date", value: String(data.published_date) });
+  if (title) fields.unshift({ key: "spl_title", label: "SPL Title", value: title });
+  if (effectiveTime) fields.push({ key: "spl_effective_time", label: "SPL Effective Time", value: effectiveTime });
 
   return {
     source: "DailyMed" as const,
     identifier: setid,
     fields,
-    raw: { setid, title: data.title, published_date: data.published_date },
+    raw: { setid, title, effective_time: effectiveTime },
   };
 }
 
