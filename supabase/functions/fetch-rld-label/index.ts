@@ -19,34 +19,15 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-// FDA SPL section keys we surface (snake_case matches the tab's seed keys)
-const FDA_SECTION_KEYS: { key: string; label: string }[] = [
-  { key: "boxed_warning", label: "Boxed Warning" },
-  { key: "indications_and_usage", label: "1 Indications and Usage" },
-  { key: "dosage_and_administration", label: "2 Dosage and Administration" },
-  { key: "dosage_forms_and_strengths", label: "3 Dosage Forms and Strengths" },
-  { key: "contraindications", label: "4 Contraindications" },
-  { key: "warnings_and_precautions", label: "5 Warnings and Precautions" },
-  { key: "warnings", label: "Warnings" },
-  { key: "adverse_reactions", label: "6 Adverse Reactions" },
-  { key: "drug_interactions", label: "7 Drug Interactions" },
-  { key: "use_in_specific_populations", label: "8 Use in Specific Populations" },
-  { key: "pregnancy", label: "8.1 Pregnancy" },
-  { key: "pediatric_use", label: "8.4 Pediatric Use" },
-  { key: "geriatric_use", label: "8.5 Geriatric Use" },
-  { key: "overdosage", label: "10 Overdosage" },
-  { key: "description", label: "11 Description" },
-  { key: "clinical_pharmacology", label: "12 Clinical Pharmacology" },
-  { key: "mechanism_of_action", label: "12.1 Mechanism of Action" },
-  { key: "nonclinical_toxicology", label: "13 Nonclinical Toxicology" },
-  { key: "clinical_studies", label: "14 Clinical Studies" },
-  { key: "how_supplied", label: "16 How Supplied / Storage and Handling" },
-  { key: "patient_information", label: "17 Patient Counseling Information" },
-  { key: "information_for_patients", label: "Information for Patients" },
-  { key: "active_ingredient", label: "Active Ingredient" },
-  { key: "inactive_ingredient", label: "Inactive Ingredients" },
-  { key: "purpose", label: "Purpose" },
-];
+// Keys we never want to surface as label sections (metadata/IDs handled separately)
+const OPENFDA_SKIP_KEYS = new Set<string>([
+  "openfda", "id", "set_id", "version", "effective_time", "spl_id",
+  "spl_set_id", "spl_product_data_elements", "package_label_principal_display_panel",
+]);
+
+// Best-effort human label from a snake_case key
+const humanizeKey = (k: string) =>
+  k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
 function buildOpenFdaSearch(input: {
   brand_name?: string;
