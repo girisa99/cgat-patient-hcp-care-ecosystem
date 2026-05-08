@@ -1911,7 +1911,8 @@ async function callVisionAnalysis(
   prompt: string,
   systemPrompt: string | undefined,
   imageBase64: string,
-  context: Record<string, any>
+  context: Record<string, any>,
+  maxTokens?: number
 ) {
   console.log(`[UniversalAI-Vision] Analyzing scene with provider: ${provider}`);
   
@@ -1931,16 +1932,16 @@ Analyze the provided image and return a JSON object with:
 
   switch (provider) {
     case 'openai':
-      return await callOpenAIVision(model || 'gpt-4o', analysisPrompt, fullSystemPrompt, imageBase64);
+      return await callOpenAIVision(model || 'gpt-4o', analysisPrompt, fullSystemPrompt, imageBase64, maxTokens);
     case 'claude':
-      return await callClaudeVision(model || 'claude-sonnet-4-6', analysisPrompt, fullSystemPrompt, imageBase64);
+      return await callClaudeVision(model || 'claude-sonnet-4-6', analysisPrompt, fullSystemPrompt, imageBase64, maxTokens);
     case 'gemini':
-      return await callGeminiVision(model || 'gemini-2.5-flash', analysisPrompt, fullSystemPrompt, imageBase64);
+      return await callGeminiVision(model || 'gemini-2.5-flash', analysisPrompt, fullSystemPrompt, imageBase64, maxTokens);
     case 'lovable': // DEPRECATED - route to Gemini direct API
     case 'default':
     default:
       // Default to Gemini Vision (NO LOVABLE AI)
-      return await callGeminiVision(model || 'gemini-2.5-flash', analysisPrompt, fullSystemPrompt, imageBase64);
+      return await callGeminiVision(model || 'gemini-2.5-flash', analysisPrompt, fullSystemPrompt, imageBase64, maxTokens);
   }
 }
 
