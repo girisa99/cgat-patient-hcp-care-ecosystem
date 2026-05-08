@@ -408,6 +408,7 @@ ${opts.rawText ? `=== OCR TEXT (may be empty) ===\n${opts.rawText.slice(0, 24000
       confidence: typeof f.rld.confidence === 'number' ? f.rld.confidence : undefined,
       evidence: f.rld.evidence,
     } : null,
+    dailymed: null,
   })) : [];
 
   return {
@@ -416,7 +417,7 @@ ${opts.rawText ? `=== OCR TEXT (may be empty) ===\n${opts.rawText.slice(0, 24000
   };
 }
 
-// Merge a second dual-extraction (from a separate RLD upload) into the existing one
+// Merge a second dual-extraction (from a separate manual RLD upload) into the existing one
 function mergeRldUpload(base: DualExtraction, addition: DualExtraction): DualExtraction {
   const map = new Map<string, DualField>(base.fields.map(f => [f.key, { ...f }]));
   for (const f of addition.fields) {
@@ -427,10 +428,38 @@ function mergeRldUpload(base: DualExtraction, addition: DualExtraction): DualExt
       existing.rld = incoming;
       existing.label = existing.label || f.label;
     } else {
-      map.set(f.key, { key: f.key, label: f.label, proposed: null, rld: incoming });
+      map.set(f.key, { key: f.key, label: f.label, proposed: null, rld: incoming, dailymed: null });
     }
   }
   return { documentContains: 'both', fields: Array.from(map.values()) };
+}
+
+// Merge external sources (openFDA → rld column, DailyMed → dailymed column) without losing the other.
+function mergeExternalSources(
+  base: DualExtraction | null,
+  openFdaFields: { key: string; label: string; value: string; evidence?: string }[],
+  dailyMedFields: { key: string; label: string; value: string; evidence?: string }[],
+): DualExtraction {
+  const map = new Map<string, DualField>(
+    (base?.fields || []).map(f => [f.key, { ...f }]),
+  );
+  const ensure = (key: string, label: string): DualField => {
+    let row = map.get(key);
+    if (!row) {
+      row = { key, label, proposed: null, rld: null, dailymed: null };
+      map.set(key, row);
+    }
+    return row;
+  };
+  for (const f of openFdaFields) {
+    const row = ensure(f.key, f.label || f.key);
+    row.rld = { value: f.value, confidence: 0.95, evidence: f.evidence || 'openFDA' };
+  }
+  for (const f of dailyMedFields) {
+    const row = ensure(f.key, f.label || f.key);
+    row.dailymed = { value: f.value, confidence: 0.95, evidence: f.evidence || 'DailyMed' };
+  }
+  return { documentContains: base?.documentContains || 'rld_only', fields: Array.from(map.values()) };
 }
 
 // ---------- Component ----------
