@@ -647,10 +647,11 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
     for (const f of extraction?.fields || []) {
       const v = f.proposed?.value?.trim();
       if (!v) continue;
-      if (f.key === 'brand_name' && !out.brand_name) out.brand_name = v;
-      if (f.key === 'generic_name' && !out.generic_name) out.generic_name = v;
-      if (f.key === 'ndc' && !out.ndc) out.ndc = v;
-      if (f.key === 'application_number' && !out.application_number) out.application_number = v;
+      const identity = `${f.key} ${f.label}`.toLowerCase();
+      if (!out.brand_name && identity.includes('brand') && identity.includes('name')) out.brand_name = v;
+      if (!out.generic_name && (identity.includes('generic') || identity.includes('established'))) out.generic_name = v;
+      if (!out.ndc && /\bndc\b|national drug code/.test(identity)) out.ndc = v;
+      if (!out.application_number && /application|\bnda\b|\banda\b/.test(identity)) out.application_number = v;
     }
     return out;
   }, [extraction]);
