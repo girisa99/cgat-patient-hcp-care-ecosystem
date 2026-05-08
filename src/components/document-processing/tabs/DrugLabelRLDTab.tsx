@@ -516,11 +516,11 @@ function mergeExternalSources(
     return row;
   };
   for (const f of openFdaFields) {
-    const row = ensure(f.key, f.label || f.key);
+    const row = findCompatibleField(map, { key: f.key, label: f.label || f.key, value: f.value }, 'rld') || ensure(f.key, f.label || f.key);
     row.rld = { value: f.value, confidence: 0.95, evidence: f.evidence || 'openFDA' };
   }
   for (const f of dailyMedFields) {
-    const row = ensure(f.key, f.label || f.key);
+    const row = findCompatibleField(map, { key: f.key, label: f.label || f.key, value: f.value }, 'dailymed') || ensure(f.key, f.label || f.key);
     row.dailymed = { value: f.value, confidence: 0.95, evidence: f.evidence || 'DailyMed' };
   }
   return { documentContains: base?.documentContains || 'rld_only', fields: Array.from(map.values()) };
@@ -550,6 +550,7 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
   }, [extraction]);
 
   const [sourceImageBase64, setSourceImageBase64] = useState<string | undefined>(undefined);
+  const uploadedProposedExtraction = useMemo(() => buildUploadedProposedExtraction(processingResult), [processingResult]);
 
   // Resolve image to base64 whether it's a data URL or a remote (Supabase) URL.
   useEffect(() => {
@@ -571,8 +572,9 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
 
   // Fingerprint to detect new document and re-run extraction automatically
   const sourceFingerprint = useMemo(() => {
-    return `${processingResult?.fileName || ''}|${sourceRawText.length}|${(sourceImageBase64 || '').length}`;
-  }, [processingResult?.fileName, sourceRawText, sourceImageBase64]);
+    const fieldSignature = JSON.stringify(Object.entries(processingResult?.extractedFields || {}).map(([k, v]: [string, any]) => [k, v?.value ?? v]));
+    return `${processingResult?.fileName || ''}|${sourceRawText.length}|${(sourceImageBase64 || '').length}|${fieldSignature.length}`;
+  }, [processingResult?.fileName, processingResult?.extractedFields, sourceRawText, sourceImageBase64]);
 
   const runExtraction = useCallback(async (silent = false) => {
     if (!sourceImageBase64 && !sourceRawText) {
@@ -587,18 +589,25 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
         rawText: sourceRawText,
         mode: 'auto',
       });
-      setExtraction(result);
-      const total = result.fields.length;
-      const both = result.fields.filter(f => f.proposed && f.rld).length;
+      const mergedResult = mergeUploadedProposedFields(result, uploadedProposedExtraction);
+      setExtraction(mergedResult);
+      const total = mergedResult.fields.length;
+      const both = mergedResult.fields.filter(f => f.proposed && f.rld).length;
       toast.success(`Extracted ${total} fields — ${both} have both Proposed & RLD values`);
     } catch (e: any) {
       console.error('[DrugLabelRLD] extraction failed:', e);
-      setExtractError(e?.message || 'Extraction failed');
-      if (!silent) toast.error(e?.message || 'Extraction failed');
+      if (uploadedProposedExtraction?.fields.length) {
+        setExtraction(uploadedProposedExtraction);
+        setExtractError(null);
+        if (!silent) toast.warning('AI extraction failed, so the comparison is using uploaded mapped fields.');
+      } else {
+        setExtractError(e?.message || 'Extraction failed');
+        if (!silent) toast.error(e?.message || 'Extraction failed');
+      }
     } finally {
       setIsExtracting(false);
     }
-  }, [sourceImageBase64, sourceRawText]);
+  }, [sourceImageBase64, sourceRawText, uploadedProposedExtraction]);
 
   // Auto-run once per new source
   useEffect(() => {
