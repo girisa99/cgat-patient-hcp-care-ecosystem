@@ -44,6 +44,18 @@ function buildOpenFdaSearch(input: {
   return clauses.join("+OR+");
 }
 
+const cleanText = (value: string) => value.replace(/\s+/g, " ").trim();
+
+const slug = (s: string) =>
+  s.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 80);
+
+const firstDirectChildText = (el: Element, tagName: string): string => {
+  for (const child of Array.from(el.children)) {
+    if (child.tagName.toLowerCase() === tagName.toLowerCase()) return cleanText(child.textContent || "");
+  }
+  return "";
+};
+
 async function fetchOpenFda(input: any) {
   const search = buildOpenFdaSearch(input);
   if (!search) return null;
@@ -120,27 +132,31 @@ async function fetchDailyMed(input: any) {
   }
   if (!setid) return null;
 
-  // Fetch the SPL document — DailyMed returns sections by LOINC code
-  const splUrl = `https://dailymed.nlm.nih.gov/dailymed/services/v2/spls/${setid}.json`;
-  const r = await fetch(splUrl);
+  // Fetch the SPL XML document — DailyMed does not expose the full detail as .json.
+  const splUrl = `https://dailymed.nlm.nih.gov/dailymed/services/v2/spls/${setid}.xml`;
+  const r = await fetch(splUrl, { headers: { Accept: "application/xml" } });
   if (!r.ok) return null;
-  const j = await r.json();
-  const data = j?.data || {};
+  const xml = await r.text();
+  const doc = new DOMParser().parseFromString(xml, "application/xml");
 
   const fields: { key: string; label: string; value: string; evidence?: string }[] = [];
-  const sections = Array.isArray(data.sections) ? data.sections : [];
+  const title = firstDirectChildText(doc.documentElement, "title");
+  const effectiveTime = doc.getElementsByTagName("effectiveTime")?.[0]?.getAttribute("value") || "";
 
-  // Dynamic: surface every section DailyMed returns. Derive a snake_case key
-  // from the section's title (or LOINC code as fallback) — no hardcoded mapping.
-  const slug = (s: string) =>
-    s.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 60);
-
+  // Dynamic: surface every section DailyMed returns. Derive a snake_case key from
+  // the section title or LOINC code — no hardcoded section mapping.
+  const sections = Array.from(doc.getElementsByTagName("section"));
+  const seen = new Set<string>();
   for (const sec of sections) {
-    const code = sec?.code || sec?.loinc_code || sec?.section_code || "";
-    const title = (sec?.title || sec?.title_text || sec?.name || "").toString().trim();
-    const text = (sec?.text || sec?.section_text || "").toString().trim();
+    const title = firstDirectChildText(sec, "title");
+    const textNode = Array.from(sec.children).find((child) => child.tagName.toLowerCase() === "text");
+    const text = cleanText(textNode?.textContent || "");
     if (!text) continue;
+    const codeNode = Array.from(sec.children).find((child) => child.tagName.toLowerCase() === "code");
+    const code = codeNode?.getAttribute("code") || "";
     const key = title ? slug(title) : code ? `loinc_${slug(String(code))}` : `section_${fields.length + 1}`;
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
     const label = title || (code ? `LOINC ${code}` : `Section ${fields.length + 1}`);
     fields.push({
       key,
@@ -150,14 +166,14 @@ async function fetchDailyMed(input: any) {
     });
   }
 
-  if (data.title) fields.unshift({ key: "spl_title", label: "SPL Title", value: data.title });
-  if (data.published_date) fields.push({ key: "spl_published_date", label: "Published Date", value: String(data.published_date) });
+  if (title) fields.unshift({ key: "spl_title", label: "SPL Title", value: title });
+  if (effectiveTime) fields.push({ key: "spl_effective_time", label: "SPL Effective Time", value: effectiveTime });
 
   return {
     source: "DailyMed" as const,
     identifier: setid,
     fields,
-    raw: { setid, title: data.title, published_date: data.published_date },
+    raw: { setid, title, effective_time: effectiveTime },
   };
 }
 
