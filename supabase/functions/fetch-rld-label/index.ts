@@ -49,11 +49,20 @@ const cleanText = (value: string) => value.replace(/\s+/g, " ").trim();
 const slug = (s: string) =>
   s.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 80);
 
-const firstDirectChildText = (el: Element, tagName: string): string => {
-  for (const child of Array.from(el.children)) {
-    if (child.tagName.toLowerCase() === tagName.toLowerCase()) return cleanText(child.textContent || "");
-  }
-  return "";
+const decodeXmlEntities = (value: string) => value
+  .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&")
+  .replace(/&quot;/g, '"').replace(/&apos;/g, "'");
+
+const stripXmlTags = (value: string) => cleanText(decodeXmlEntities(value.replace(/<[^>]+>/g, " ")));
+
+const firstTagText = (xml: string, tagName: string): string => {
+  const match = xml.match(new RegExp(`<${tagName}\\b[^>]*>([\\s\\S]*?)</${tagName}>`, "i"));
+  return match ? stripXmlTags(match[1]) : "";
+};
+
+const firstTagAttr = (xml: string, tagName: string, attr: string): string => {
+  const match = xml.match(new RegExp(`<${tagName}\\b[^>]*\\s${attr}="([^"]+)"`, "i"));
+  return match?.[1] || "";
 };
 
 async function fetchOpenFda(input: any) {
