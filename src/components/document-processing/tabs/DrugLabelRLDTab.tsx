@@ -14,6 +14,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Tag, AlertTriangle, CheckCircle2, Loader2, FileText, Sparkles,
   ShieldCheck, Upload, Image as ImageIcon, RefreshCw, Globe,
+  Search, ChevronDown, ChevronRight, Lightbulb,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -124,7 +125,103 @@ const DiffText: React.FC<{ parts: DiffPart[]; side: 'left' | 'right' }> = ({ par
   </span>
 );
 
-// ---------- Dual extraction call ----------
+// ---------- Field-match inspector helpers ----------
+const STOPWORDS = new Set(['the','a','an','and','or','of','to','in','for','on','with','is','are','be','by','as','at','this','that','it','its']);
+const tokenSet = (s: string): Set<string> => {
+  const out = new Set<string>();
+  (s || '').toLowerCase().replace(/[^a-z0-9\s%./-]/g, ' ').split(/\s+/).forEach(t => {
+    if (t && t.length > 1 && !STOPWORDS.has(t)) out.add(t);
+  });
+  return out;
+};
+const jaccard = (a: string, b: string): number => {
+  const A = tokenSet(a), B = tokenSet(b);
+  if (!A.size && !B.size) return 1;
+  if (!A.size || !B.size) return 0;
+  let inter = 0;
+  A.forEach(t => { if (B.has(t)) inter++; });
+  return inter / (A.size + B.size - inter);
+};
+const sharedTokens = (a: string, b: string): string[] => {
+  const A = tokenSet(a), B = tokenSet(b);
+  const out: string[] = [];
+  A.forEach(t => { if (B.has(t)) out.push(t); });
+  return out.slice(0, 20);
+};
+const uniqueTokens = (a: string, b: string): string[] => {
+  const A = tokenSet(a), B = tokenSet(b);
+  const out: string[] = [];
+  A.forEach(t => { if (!B.has(t)) out.push(t); });
+  return out.slice(0, 20);
+};
+
+interface MatchExplanation {
+  status: RowStatus;
+  similarity: number;
+  reasons: string[];
+  shared: string[];
+  onlyProposed: string[];
+  onlyRld: string[];
+  lengthDelta: number;
+}
+
+const explainMatch = (p: Side, r: Side, status: RowStatus): MatchExplanation => {
+  const pv = p?.value || '';
+  const rv = r?.value || '';
+  const sim = jaccard(pv, rv);
+  const reasons: string[] = [];
+  if (status === 'match') reasons.push('Normalized text is identical (case + whitespace ignored).');
+  if (status === 'partial') reasons.push('One value is a substring of the other — likely truncation or expansion.');
+  if (status === 'mismatch') {
+    reasons.push(`Token similarity ${(sim * 100).toFixed(0)}% — values diverge in wording.`);
+    if (Math.abs(pv.length - rv.length) > Math.max(pv.length, rv.length) * 0.4)
+      reasons.push('Significant length difference — one side likely contains additional content.');
+  }
+  if (status === 'missing_proposed') reasons.push('Proposed label has no value for this field.');
+  if (status === 'missing_rld') reasons.push('RLD has no value for this field.');
+  if (status === 'missing_both') reasons.push('Neither side reported a value.');
+  if (p?.confidence !== undefined && p.confidence < 0.6) reasons.push(`Low extraction confidence on Proposed (${Math.round(p.confidence * 100)}%).`);
+  if (r?.confidence !== undefined && r.confidence < 0.6) reasons.push(`Low extraction confidence on RLD (${Math.round(r.confidence * 100)}%).`);
+  return {
+    status,
+    similarity: sim,
+    reasons,
+    shared: sharedTokens(pv, rv),
+    onlyProposed: uniqueTokens(pv, rv),
+    onlyRld: uniqueTokens(rv, pv),
+    lengthDelta: pv.length - rv.length,
+  };
+};
+
+interface AlternateMatch {
+  key: string;
+  label: string;
+  side: 'proposed' | 'rld';
+  value: string;
+  similarity: number;
+}
+
+const findBestAlternate = (
+  field: DualField,
+  all: DualField[],
+  searchSide: 'proposed' | 'rld'
+): AlternateMatch | null => {
+  // We have value on the opposite side and want to find best alt match on `searchSide`.
+  const queryValue = searchSide === 'rld' ? field.proposed?.value : field.rld?.value;
+  if (!queryValue) return null;
+  let best: AlternateMatch | null = null;
+  for (const other of all) {
+    if (other.key === field.key) continue;
+    const candidate = searchSide === 'rld' ? other.rld?.value : other.proposed?.value;
+    if (!candidate) continue;
+    const sim = jaccard(queryValue, candidate);
+    if (sim > 0.25 && (!best || sim > best.similarity)) {
+      best = { key: other.key, label: other.label, side: searchSide, value: candidate, similarity: sim };
+    }
+  }
+  return best;
+};
+
 const seedHints = (): { key: string; label: string }[] => {
   const cfg = getDocumentTypeById('drug-label');
   return cfg?.targetFields.map(f => ({ key: f.key, label: f.label })) || [];
@@ -238,6 +335,7 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
   const [isUploadingRld, setIsUploadingRld] = useState(false);
   const [isFetchingFda, setIsFetchingFda] = useState(false);
   const [fdaSource, setFdaSource] = useState<string | null>(null);
+  const [inspectKey, setInspectKey] = useState<string | null>(null);
   const lastSourceRef = useRef<string>('');
 
   // Persist
@@ -518,8 +616,13 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
                     const meta = STATUS_BADGE[status];
                     const showDiff = (status === 'mismatch' || status === 'partial') && f.proposed?.value && f.rld?.value;
                     const diff = showDiff ? diffWords(f.proposed!.value, f.rld!.value) : null;
+                    const isOpen = inspectKey === f.key;
+                    const explanation = isOpen ? explainMatch(f.proposed, f.rld, status) : null;
+                    const altForRld = isOpen && f.proposed?.value ? findBestAlternate(f, fields, 'rld') : null;
+                    const altForProposed = isOpen && f.rld?.value ? findBestAlternate(f, fields, 'proposed') : null;
                     return (
-                      <div key={f.key} className={`grid grid-cols-12 px-3 py-2 gap-2 text-xs items-start hover:bg-muted/40 ${f.accepted ? 'bg-green-50/50 dark:bg-green-950/10' : ''}`}>
+                      <React.Fragment key={f.key}>
+                      <div className={`grid grid-cols-12 px-3 py-2 gap-2 text-xs items-start hover:bg-muted/40 ${f.accepted ? 'bg-green-50/50 dark:bg-green-950/10' : ''}`}>
                         <div className="col-span-3 pt-1">
                           <div className="font-medium">{f.label}</div>
                           <div className="text-[10px] text-muted-foreground font-mono">{f.key}</div>
@@ -559,11 +662,109 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
                         </div>
                         <div className="col-span-1 flex flex-col items-center gap-1 pt-1">
                           <Badge className={`${meta.cls} text-[10px] whitespace-nowrap`}>{meta.label}</Badge>
+                          <Button
+                            size="sm" variant="ghost"
+                            className="h-6 px-2 text-[10px]"
+                            onClick={() => setInspectKey(isOpen ? null : f.key)}
+                            title="Inspect why this matched / didn't match"
+                          >
+                            {isOpen ? <ChevronDown className="h-3 w-3 mr-0.5" /> : <ChevronRight className="h-3 w-3 mr-0.5" />}
+                            <Search className="h-3 w-3 mr-0.5" /> Inspect
+                          </Button>
                           <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px]" onClick={() => acceptRow(f.key)}>
                             {f.accepted ? 'Unaccept' : 'Accept'}
                           </Button>
                         </div>
                       </div>
+                      {isOpen && explanation && (
+                        <div className="px-3 py-3 bg-muted/40 border-l-4 border-primary text-xs space-y-3">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge variant="secondary" className="text-[10px]">
+                              Field-Match Inspector
+                            </Badge>
+                            <Badge className={`${meta.cls} text-[10px]`}>{meta.label}</Badge>
+                            <Badge variant="outline" className="text-[10px]">
+                              Token similarity: {Math.round(explanation.similarity * 100)}%
+                            </Badge>
+                            <Badge variant="outline" className="text-[10px]">
+                              Length Δ: {explanation.lengthDelta > 0 ? '+' : ''}{explanation.lengthDelta} chars
+                            </Badge>
+                          </div>
+                          <div>
+                            <div className="font-semibold mb-1">Why this status?</div>
+                            <ul className="list-disc pl-5 space-y-0.5 text-[11px] text-muted-foreground">
+                              {explanation.reasons.map((r, i) => <li key={i}>{r}</li>)}
+                            </ul>
+                          </div>
+                          <div className="grid grid-cols-3 gap-3">
+                            <div>
+                              <div className="font-semibold text-[11px] mb-1">Shared tokens ({explanation.shared.length})</div>
+                              <div className="flex flex-wrap gap-1">
+                                {explanation.shared.length === 0 && <span className="italic text-muted-foreground text-[10px]">none</span>}
+                                {explanation.shared.map(t => (
+                                  <span key={t} className="px-1.5 py-0.5 rounded bg-green-200/70 dark:bg-green-900/40 text-[10px] font-mono">{t}</span>
+                                ))}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="font-semibold text-[11px] mb-1">Only in Proposed</div>
+                              <div className="flex flex-wrap gap-1">
+                                {explanation.onlyProposed.length === 0 && <span className="italic text-muted-foreground text-[10px]">none</span>}
+                                {explanation.onlyProposed.map(t => (
+                                  <span key={t} className="px-1.5 py-0.5 rounded bg-orange-200/70 dark:bg-orange-900/40 text-[10px] font-mono">{t}</span>
+                                ))}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="font-semibold text-[11px] mb-1">Only in RLD</div>
+                              <div className="flex flex-wrap gap-1">
+                                {explanation.onlyRld.length === 0 && <span className="italic text-muted-foreground text-[10px]">none</span>}
+                                {explanation.onlyRld.map(t => (
+                                  <span key={t} className="px-1.5 py-0.5 rounded bg-blue-200/70 dark:bg-blue-900/40 text-[10px] font-mono">{t}</span>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                          {(f.proposed?.evidence || f.rld?.evidence) && (
+                            <div className="grid grid-cols-2 gap-3 text-[11px]">
+                              {f.proposed?.evidence && (
+                                <div><span className="font-semibold">Proposed evidence:</span> <span className="text-muted-foreground italic">"{f.proposed.evidence}"</span></div>
+                              )}
+                              {f.rld?.evidence && (
+                                <div><span className="font-semibold">RLD evidence:</span> <span className="text-muted-foreground italic">"{f.rld.evidence}"</span></div>
+                              )}
+                            </div>
+                          )}
+                          {(altForRld || altForProposed) && (
+                            <div className="rounded border border-dashed bg-background p-2 space-y-2">
+                              <div className="flex items-center gap-1 font-semibold text-[11px]">
+                                <Lightbulb className="h-3.5 w-3.5 text-yellow-600" />
+                                Suggested alternate match
+                              </div>
+                              {altForRld && (
+                                <div className="text-[11px]">
+                                  <div className="text-muted-foreground">
+                                    Proposed value of <strong>{f.label}</strong> looks closer ({Math.round(altForRld.similarity * 100)}%) to the RLD's <strong>{altForRld.label}</strong>:
+                                  </div>
+                                  <div className="font-mono text-[10px] mt-1 p-1.5 rounded bg-muted">{altForRld.value.slice(0, 300)}{altForRld.value.length > 300 ? '…' : ''}</div>
+                                </div>
+                              )}
+                              {altForProposed && (
+                                <div className="text-[11px]">
+                                  <div className="text-muted-foreground">
+                                    RLD value of <strong>{f.label}</strong> looks closer ({Math.round(altForProposed.similarity * 100)}%) to the Proposed's <strong>{altForProposed.label}</strong>:
+                                  </div>
+                                  <div className="font-mono text-[10px] mt-1 p-1.5 rounded bg-muted">{altForProposed.value.slice(0, 300)}{altForProposed.value.length > 300 ? '…' : ''}</div>
+                                </div>
+                              )}
+                              {!altForRld && !altForProposed && (
+                                <div className="italic text-muted-foreground text-[10px]">No better alternate match found across other fields.</div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      </React.Fragment>
                     );
                   })}
                 </div>
