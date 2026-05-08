@@ -325,12 +325,15 @@ ${opts.rawText ? `=== OCR TEXT (may be empty) ===\n${opts.rawText.slice(0, 24000
   const { data, error } = await supabase.functions.invoke('ai-universal-processor', { body });
   if (error) throw new Error(error.message || 'Extraction failed');
   const content: string = data?.content || '';
-  const m = content.match(/\{[\s\S]*\}/);
-  if (!m) throw new Error('Model did not return JSON');
+  if (!content.trim()) throw new Error('Empty response from extraction model');
 
   let parsed: any;
-  try { parsed = JSON.parse(m[0]); } catch (e: any) {
-    throw new Error('Failed to parse extraction JSON: ' + e.message);
+  try {
+    parsed = extractJsonObject(content);
+  } catch (e: any) {
+    const preview = content.slice(0, 240).replace(/\s+/g, ' ');
+    console.error('[DrugLabelRLD] JSON parse failed. Raw content:', content);
+    throw new Error(`${e.message}. Model said: "${preview}${content.length > 240 ? '…' : ''}"`);
   }
   const fields: DualField[] = Array.isArray(parsed.fields) ? parsed.fields.map((f: any) => ({
     key: String(f.key || '').trim() || `field_${Math.random().toString(36).slice(2, 8)}`,
