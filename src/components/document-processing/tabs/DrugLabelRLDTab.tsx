@@ -616,8 +616,13 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
                     const meta = STATUS_BADGE[status];
                     const showDiff = (status === 'mismatch' || status === 'partial') && f.proposed?.value && f.rld?.value;
                     const diff = showDiff ? diffWords(f.proposed!.value, f.rld!.value) : null;
+                    const isOpen = inspectKey === f.key;
+                    const explanation = isOpen ? explainMatch(f.proposed, f.rld, status) : null;
+                    const altForRld = isOpen && f.proposed?.value ? findBestAlternate(f, fields, 'rld') : null;
+                    const altForProposed = isOpen && f.rld?.value ? findBestAlternate(f, fields, 'proposed') : null;
                     return (
-                      <div key={f.key} className={`grid grid-cols-12 px-3 py-2 gap-2 text-xs items-start hover:bg-muted/40 ${f.accepted ? 'bg-green-50/50 dark:bg-green-950/10' : ''}`}>
+                      <React.Fragment key={f.key}>
+                      <div className={`grid grid-cols-12 px-3 py-2 gap-2 text-xs items-start hover:bg-muted/40 ${f.accepted ? 'bg-green-50/50 dark:bg-green-950/10' : ''}`}>
                         <div className="col-span-3 pt-1">
                           <div className="font-medium">{f.label}</div>
                           <div className="text-[10px] text-muted-foreground font-mono">{f.key}</div>
@@ -657,11 +662,109 @@ const DrugLabelRLDTab: React.FC<Props> = ({ processingResult }) => {
                         </div>
                         <div className="col-span-1 flex flex-col items-center gap-1 pt-1">
                           <Badge className={`${meta.cls} text-[10px] whitespace-nowrap`}>{meta.label}</Badge>
+                          <Button
+                            size="sm" variant="ghost"
+                            className="h-6 px-2 text-[10px]"
+                            onClick={() => setInspectKey(isOpen ? null : f.key)}
+                            title="Inspect why this matched / didn't match"
+                          >
+                            {isOpen ? <ChevronDown className="h-3 w-3 mr-0.5" /> : <ChevronRight className="h-3 w-3 mr-0.5" />}
+                            <Search className="h-3 w-3 mr-0.5" /> Inspect
+                          </Button>
                           <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px]" onClick={() => acceptRow(f.key)}>
                             {f.accepted ? 'Unaccept' : 'Accept'}
                           </Button>
                         </div>
                       </div>
+                      {isOpen && explanation && (
+                        <div className="px-3 py-3 bg-muted/40 border-l-4 border-primary text-xs space-y-3">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge variant="secondary" className="text-[10px]">
+                              Field-Match Inspector
+                            </Badge>
+                            <Badge className={`${meta.cls} text-[10px]`}>{meta.label}</Badge>
+                            <Badge variant="outline" className="text-[10px]">
+                              Token similarity: {Math.round(explanation.similarity * 100)}%
+                            </Badge>
+                            <Badge variant="outline" className="text-[10px]">
+                              Length Δ: {explanation.lengthDelta > 0 ? '+' : ''}{explanation.lengthDelta} chars
+                            </Badge>
+                          </div>
+                          <div>
+                            <div className="font-semibold mb-1">Why this status?</div>
+                            <ul className="list-disc pl-5 space-y-0.5 text-[11px] text-muted-foreground">
+                              {explanation.reasons.map((r, i) => <li key={i}>{r}</li>)}
+                            </ul>
+                          </div>
+                          <div className="grid grid-cols-3 gap-3">
+                            <div>
+                              <div className="font-semibold text-[11px] mb-1">Shared tokens ({explanation.shared.length})</div>
+                              <div className="flex flex-wrap gap-1">
+                                {explanation.shared.length === 0 && <span className="italic text-muted-foreground text-[10px]">none</span>}
+                                {explanation.shared.map(t => (
+                                  <span key={t} className="px-1.5 py-0.5 rounded bg-green-200/70 dark:bg-green-900/40 text-[10px] font-mono">{t}</span>
+                                ))}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="font-semibold text-[11px] mb-1">Only in Proposed</div>
+                              <div className="flex flex-wrap gap-1">
+                                {explanation.onlyProposed.length === 0 && <span className="italic text-muted-foreground text-[10px]">none</span>}
+                                {explanation.onlyProposed.map(t => (
+                                  <span key={t} className="px-1.5 py-0.5 rounded bg-orange-200/70 dark:bg-orange-900/40 text-[10px] font-mono">{t}</span>
+                                ))}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="font-semibold text-[11px] mb-1">Only in RLD</div>
+                              <div className="flex flex-wrap gap-1">
+                                {explanation.onlyRld.length === 0 && <span className="italic text-muted-foreground text-[10px]">none</span>}
+                                {explanation.onlyRld.map(t => (
+                                  <span key={t} className="px-1.5 py-0.5 rounded bg-blue-200/70 dark:bg-blue-900/40 text-[10px] font-mono">{t}</span>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                          {(f.proposed?.evidence || f.rld?.evidence) && (
+                            <div className="grid grid-cols-2 gap-3 text-[11px]">
+                              {f.proposed?.evidence && (
+                                <div><span className="font-semibold">Proposed evidence:</span> <span className="text-muted-foreground italic">"{f.proposed.evidence}"</span></div>
+                              )}
+                              {f.rld?.evidence && (
+                                <div><span className="font-semibold">RLD evidence:</span> <span className="text-muted-foreground italic">"{f.rld.evidence}"</span></div>
+                              )}
+                            </div>
+                          )}
+                          {(altForRld || altForProposed) && (
+                            <div className="rounded border border-dashed bg-background p-2 space-y-2">
+                              <div className="flex items-center gap-1 font-semibold text-[11px]">
+                                <Lightbulb className="h-3.5 w-3.5 text-yellow-600" />
+                                Suggested alternate match
+                              </div>
+                              {altForRld && (
+                                <div className="text-[11px]">
+                                  <div className="text-muted-foreground">
+                                    Proposed value of <strong>{f.label}</strong> looks closer ({Math.round(altForRld.similarity * 100)}%) to the RLD's <strong>{altForRld.label}</strong>:
+                                  </div>
+                                  <div className="font-mono text-[10px] mt-1 p-1.5 rounded bg-muted">{altForRld.value.slice(0, 300)}{altForRld.value.length > 300 ? '…' : ''}</div>
+                                </div>
+                              )}
+                              {altForProposed && (
+                                <div className="text-[11px]">
+                                  <div className="text-muted-foreground">
+                                    RLD value of <strong>{f.label}</strong> looks closer ({Math.round(altForProposed.similarity * 100)}%) to the Proposed's <strong>{altForProposed.label}</strong>:
+                                  </div>
+                                  <div className="font-mono text-[10px] mt-1 p-1.5 rounded bg-muted">{altForProposed.value.slice(0, 300)}{altForProposed.value.length > 300 ? '…' : ''}</div>
+                                </div>
+                              )}
+                              {!altForRld && !altForProposed && (
+                                <div className="italic text-muted-foreground text-[10px]">No better alternate match found across other fields.</div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      </React.Fragment>
                     );
                   })}
                 </div>
